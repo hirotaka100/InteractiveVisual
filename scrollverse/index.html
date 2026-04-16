@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PowerMathSaya | Research Scrollstory</title>
+    <meta
+      name="description"
+      content="A scroll-driven visualization of the PowerMathSaya research data, results, and comparisons from Chapters 3, 4, and 5."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="styles.css" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"
+      defer
+    ></script>
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="grain"></div>
+
+    <header class="hero" id="top">
+      <div class="hero__backdrop" aria-hidden="true">
+        <div class="gradient-orb orb-a"></div>
+        <div class="gradient-orb orb-b"></div>
+        <div class="grid-lines"></div>
+      </div>
+
+      <div class="hero__content">
+        <p class="eyebrow reveal">PowerMathSaya Research Visual</p>
+        <h1 class="hero__title reveal">Data, Results, and Comparison Across Chapters 3 to 5</h1>
+        <p class="hero__subtitle reveal">
+          A scroll-driven evidence story of Grade 3 numeracy gains using
+          PowerMathSaya at San Isidro Talisay Elementary School.
+        </p>
+
+        <div class="hero__metrics reveal">
+          <div class="metric">
+            <span class="metric__label">Learners</span>
+            <span class="metric__value">56</span>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Evaluators</span>
+            <span class="metric__value">12</span>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Data Sources</span>
+            <span class="metric__value">Ch. 3, 4, and 5</span>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Paired t-test</span>
+            <span class="metric__value">t(55) = 33.96</span>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Runtime Mode</span>
+            <span class="metric__value" id="motionMode">Dynamic</span>
+          </div>
+          <div class="metric">
+            <span class="metric__label">Progress</span>
+            <span class="metric__value" id="scrollPercent">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="scroll-hint" aria-hidden="true">Scroll ↓</div>
+      <a class="skip-link" href="#main-content">Skip to content</a>
+    </header>
+
+    <main id="main-content">
+      <section class="chapter chapter--method" id="method">
+        <div class="chapter__inner">
+          <h2 class="chapter__title reveal">Chapter 3: Methodology Snapshot</h2>
+          <p class="chapter__text reveal">
+            Quantitative-Descriptive-Developmental-Evaluative design using ALNAT
+            pretest-posttest, paired sample t-test, and evaluator-based quality
+            assessment.
+          </p>
+
+          <div class="fact-grid">
+            <article class="fact-card reveal">
+              <h3>Participants</h3>
+              <p>56 Grade 3 learners from two sections.</p>
+            </article>
+            <article class="fact-card reveal">
+              <h3>Intervention Window</h3>
+              <p>4-week implementation from February to March 2025.</p>
+            </article>
+            <article class="fact-card reveal">
+              <h3>Core Instruments</h3>
+              <p>ALNAT pretest/posttest plus LRMDS and ISO 9621-1 evaluations.</p>
+            </article>
+            <article class="fact-card reveal">
+              <h3>Analysis</h3>
+              <p>Frequency, percentage, weighted mean, and paired t-test.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter chapter--baseline" id="baseline">
+        <div class="chapter__inner">
+          <h2 class="chapter__title reveal">Chapter 4 Baseline: ALNAT Pretest</h2>
+          <p class="chapter__text reveal">
+            Before PowerMathSaya, all 56 learners were classified under Needs Major
+            Support, establishing the intervention baseline.
+          </p>
+
+          <div class="bar-panel reveal" id="baselineBars" aria-label="Pretest distribution"></div>
+        </div>
+      </section>
+
+      <section
+        class="chapter chapter--intervention"
+        id="intervention"
+        aria-label="PowerMathSaya intervention files"
+      >
+        <div class="chapter__inner">
+          <h2 class="chapter__title reveal">Intervention Design: PowerMathSaya 01-04</h2>
+          <p class="chapter__text reveal">
+            Four game-based files target least mastered competencies through
+            tutorials, immediate feedback, rewards, and increasing challenge levels.
+          </p>
+        </div>
+
+        <div class="horizontal-track">
+          <article class="module-card">
+            <h3>PowerMathSaya01</h3>
+            <p>
+              Foundation module for addition, subtraction, and multiplication with
+              guided retry loops.
+            </p>
+          </article>
+          <article class="module-card">
+            <h3>PowerMathSaya02</h3>
+            <p>
+              Multiplication adventure with mandatory tutorial reinforcement before
+              advancement.
+            </p>
+          </article>
+          <article class="module-card">
+            <h3>PowerMathSaya03</h3>
+            <p>
+              Treasure hunt progression using mixed operations and escalating word
+              problems.
+            </p>
+          </article>
+          <article class="module-card">
+            <h3>PowerMathSaya04</h3>
+            <p>
+              Game-show style team challenge for geometry, patterns, and algebra.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="chapter chapter--comparison" id="comparison">
+        <div class="chapter__inner">
+          <h2 class="chapter__title reveal">Comparison: Pretest vs Posttest</h2>
+          <p class="chapter__text reveal">
+            The chart compares pretest values with Chapter 4 posttest details and
+            Chapter 5 summary values to show movement and reporting differences.
+          </p>
+
+          <div class="bar-panel reveal" id="shiftChart" aria-label="Distribution shift chart"></div>
+
+          <div class="comparison-grid reveal">
+            <article class="comparison-card">
+              <h3>Chapter 4 Detailed Posttest</h3>
+              <ul class="clean-list" id="chapter4List"></ul>
+            </article>
+            <article class="comparison-card">
+              <h3>Chapter 5 Summary Values</h3>
+              <ul class="clean-list" id="chapter5List"></ul>
+            </article>
+            <article class="comparison-card">
+              <h3>Discrepancy Note</h3>
+              <p>
+                Chapter 4 reports 5 learners in Needs Major Support and 14 in
+                Developing, while Chapter 5 summary reports 4 and 19 respectively.
+              </p>
+              <p>
+                This view intentionally keeps both values visible for transparent
+                interpretation.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter chapter--stats" id="stats">
+        <div class="chapter__inner">
+          <h2 class="chapter__title reveal">Statistical Evidence of Improvement</h2>
+          <p class="chapter__text reveal">
+            Paired sample analysis indicates a strong, statistically significant
+            increase in learner performance after the intervention.
+          </p>
+
+          <div class="stat-grid" id="statsGrid"></div>
+        </div>
+      </section>
+
+      <section class="chapter chapter--quality" id="quality">
+        <div class="chapter__inner">
+          <h2 class="chapter__title reveal">Evaluation Results and Quality Scores</h2>
+          <p class="chapter__text reveal">
+            Teachers, master teacher, and an IT expert rated the material across
+            content, instruction, technical quality, and software quality indicators.
+          </p>
+
+          <div class="quality-layout">
+            <article class="bar-panel reveal">
+              <h3>LRMDS Evaluation Totals</h3>
+              <div id="qualityBars"></div>
+            </article>
+            <article class="bar-panel reveal">
+              <h3>IT Expert Scores</h3>
+              <div id="itBars"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter chapter--recommendations" id="recommendations">
+        <div class="chapter__inner">
+          <h2 class="chapter__title reveal">Evaluator Recommendations</h2>
+          <p class="chapter__text reveal">
+            Ten recommendations were listed, led by adding real-life scenarios and
+            reflective discussion prompts.
+          </p>
+
+          <div class="recommendation-grid" id="recommendationGrid"></div>
+        </div>
+      </section>
+
+      <section class="chapter chapter--learner-data" id="learner-data">
+        <div class="chapter__inner">
+          <h2 class="chapter__title reveal">Per-Learner Data Tables</h2>
+          <p class="chapter__text reveal">
+            Expand each table to inspect all 56 learner records from Chapter 4
+            pretest and posttest results.
+          </p>
+
+          <div class="filter-panel reveal">
+            <div class="filter-controls">
+              <label class="control" for="learnerSearch">
+                <span>Learner Search</span>
+                <input type="search" id="learnerSearch" placeholder="Type L18 or 18" />
+              </label>
+
+              <label class="control" for="ratingFilter">
+                <span>Posttest Rating</span>
+                <select id="ratingFilter">
+                  <option value="all">All Ratings</option>
+                  <option value="Needs Major Support">Needs Major Support</option>
+                  <option value="Emerging">Emerging</option>
+                  <option value="Anchoring">Anchoring</option>
+                  <option value="Developing">Developing</option>
+                  <option value="Transforming">Transforming</option>
+                </select>
+              </label>
+
+              <button type="button" class="ghost-btn" id="clearFilters">Reset Filters</button>
+            </div>
+
+            <p class="filter-status" id="filterStatus" aria-live="polite">Showing all 56 learners.</p>
+
+            <div class="insight-grid">
+              <article class="insight-card">
+                <h3>Matched Learners</h3>
+                <p id="matchCount">56</p>
+              </article>
+              <article class="insight-card">
+                <h3>Avg Pretest %</h3>
+                <p id="avgPre">34.00%</p>
+              </article>
+              <article class="insight-card">
+                <h3>Avg Posttest %</h3>
+                <p id="avgPost">82.00%</p>
+              </article>
+              <article class="insight-card">
+                <h3>Mean Score Gain</h3>
+                <p id="meanGain">+19.14</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="learner-panels">
+            <details class="data-details reveal" open>
+              <summary>Table 1: ALNAT Pretest (Before PowerMathSaya)</summary>
+              <div class="table-wrap" role="region" aria-label="Pretest learner table" tabindex="0">
+                <table class="data-table" id="pretestTable">
+                  <thead>
+                    <tr>
+                      <th scope="col">Learner</th>
+                      <th scope="col">Score</th>
+                      <th scope="col">Percent</th>
+                      <th scope="col">Rating</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </details>
+
+            <details class="data-details reveal">
+              <summary>Table 2: Posttest (After PowerMathSaya)</summary>
+              <div class="table-wrap" role="region" aria-label="Posttest learner table" tabindex="0">
+                <table class="data-table" id="posttestTable">
+                  <thead>
+                    <tr>
+                      <th scope="col">Learner</th>
+                      <th scope="col">Score</th>
+                      <th scope="col">Percent</th>
+                      <th scope="col">Rating</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter chapter--final" id="final">
+        <div class="chapter__inner">
+          <h2 class="chapter__title">Conclusion</h2>
+          <p class="chapter__text">
+            Across the three chapters, the evidence points to substantial numeracy
+            gains after PowerMathSaya, supported by strong statistical results and
+            high evaluator ratings.
+          </p>
+          <button id="backToTop" class="cta">Replay Research Story</button>
+        </div>
+      </section>
+    </main>
+
+    <div class="progress-wrap" aria-hidden="true">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </body>
+</html>
