@@ -244,6 +244,202 @@ a {
   font-size: 0.95rem;
 }
 
+.framework-controls {
+  border: 1px solid var(--line);
+  border-radius: 0.95rem;
+  padding: 0.95rem;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(8, 19, 30, 0.7));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.framework-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.95rem;
+}
+
+.kpi-card {
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  padding: 0.85rem;
+  background: linear-gradient(150deg, rgba(126, 198, 255, 0.12), rgba(7, 18, 28, 0.72));
+}
+
+.kpi-card h3 {
+  margin: 0;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+.kpi-card p {
+  margin: 0.5rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.viz-card {
+  border: 1px solid var(--line);
+  border-radius: 0.95rem;
+  padding: 0.95rem;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(6, 14, 23, 0.7));
+  box-shadow: var(--shadow);
+}
+
+.viz-card h3 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.viz-subtitle {
+  margin: 0.52rem 0 0.8rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.viz-footnote {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.svg-shell {
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: rgba(4, 10, 17, 0.72);
+  overflow: hidden;
+  min-height: 350px;
+}
+
+.svg-shell svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart-axis {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1;
+}
+
+.chart-grid {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
+}
+
+.chart-label {
+  fill: #b8cad4;
+  font-size: 12px;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.chart-title {
+  fill: #eef7fb;
+  font-size: 12px;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+}
+
+.slope-line {
+  stroke: rgba(126, 198, 255, 0.5);
+  stroke-width: 2;
+  fill: none;
+}
+
+.slope-line--up {
+  stroke: rgba(35, 215, 186, 0.55);
+}
+
+.slope-line--down {
+  stroke: rgba(255, 125, 101, 0.55);
+}
+
+.slope-point {
+  fill: #a4b7c4;
+  opacity: 0.85;
+}
+
+.slope-point--active {
+  fill: #ffba52;
+}
+
+.hist-bar--honest {
+  fill: rgba(35, 215, 186, 0.78);
+}
+
+.hist-bar--patience {
+  fill: rgba(126, 198, 255, 0.76);
+}
+
+.hist-overlay {
+  fill: none;
+  stroke: rgba(255, 186, 82, 0.9);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.radar-panels {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.radar-panel {
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.radar-panel h4 {
+  margin: 0;
+  font-size: 0.93rem;
+}
+
+.radar-panel p {
+  margin: 0.45rem 0 0.7rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.radar-panel svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.radar-grid {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 1;
+}
+
+.radar-axis {
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 1;
+}
+
+.radar-shape {
+  fill-opacity: 0.26;
+  stroke-width: 2;
+}
+
+.radar-point {
+  stroke: none;
+}
+
 .chapter--intervention {
   overflow: hidden;
 }
@@ -814,6 +1010,13 @@ a {
   .fact-grid,
   .stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .framework-controls,
+  .framework-kpis,
+  .viz-grid,
+  .radar-panels {
+    grid-template-columns: 1fr;
   }
 
   .comparison-grid,

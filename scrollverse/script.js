@@ -13,6 +13,17 @@ const learnerSearch = document.getElementById("learnerSearch");
 const ratingFilter = document.getElementById("ratingFilter");
 const clearFilters = document.getElementById("clearFilters");
 const filterStatus = document.getElementById("filterStatus");
+const sectionViewFilter = document.getElementById("sectionViewFilter");
+const phaseToggleRoot = document.getElementById("phaseToggle");
+const evaluatorRoleFilter = document.getElementById("evaluatorRoleFilter");
+const kpiLearnerCount = document.getElementById("kpiLearnerCount");
+const kpiMeanScore = document.getElementById("kpiMeanScore");
+const kpiWeightedMean = document.getElementById("kpiWeightedMean");
+const kpiTopFrequency = document.getElementById("kpiTopFrequency");
+const slopegraphShell = document.getElementById("slopegraphShell");
+const histogramShell = document.getElementById("histogramShell");
+const histogramNote = document.getElementById("histogramNote");
+const radarPanels = document.getElementById("radarPanels");
 const sourceModeRoot = document.getElementById("sourceMode");
 const metricModeRoot = document.getElementById("metricMode");
 const comparisonInsight = document.getElementById("comparisonInsight");
@@ -151,6 +162,10 @@ function learnerIdNumber(label) {
   return Number(String(label).replace(/[^0-9]/g, ""));
 }
 
+function sectionFromLearnerNumber(number) {
+  return number <= 25 ? "Honest" : "Patience";
+}
+
 const researchData = {
   totalLearners: 56,
   pretestLearners: parseLearnerRows(pretestRowsRaw),
@@ -231,12 +246,44 @@ const learnerPairs = researchData.pretestLearners
     return {
       number,
       learner: `L${number}`,
+      section: sectionFromLearnerNumber(number),
       pre,
       post: posttestByNumber.get(number) || null
     };
   })
   .filter((row) => row.post !== null)
   .sort((a, b) => a.number - b.number);
+
+const ratingOrder = [
+  "Needs Major Support",
+  "Emerging",
+  "Anchoring",
+  "Developing",
+  "Transforming"
+];
+
+const frameworkState = {
+  section: "all",
+  phase: "post",
+  evaluatorRole: "all"
+};
+
+const evaluatorProfiles = {
+  teachers: {
+    title: "Teachers + Master Teacher (LRMDS)",
+    subtitle: "n=11; normalized to 5-point scale from Tables 4-6",
+    labels: ["Content", "Instructional", "Technical"],
+    values: researchData.qualityScores.slice(0, 3).map((row) => (row.score / row.max) * 5),
+    color: "#23d7ba"
+  },
+  it: {
+    title: "IT Expert (ISO 9621-1)",
+    subtitle: "n=1; normalized to 5-point scale from Table 8",
+    labels: researchData.itExpertScores.map((row) => row.label),
+    values: researchData.itExpertScores.map((row) => (row.score / row.max) * 5),
+    color: "#ffba52"
+  }
+};
 
 const comparisonState = {
   sourceMode: "pre-post4",
@@ -491,6 +538,382 @@ function setupComparisonControls() {
     updatePillSelection(metricModeRoot, "data-metric-mode", comparisonState.metricMode);
     renderDistributionComparison();
   });
+}
+
+function getPairsForFramework() {
+  if (frameworkState.section === "all") {
+    return learnerPairs;
+  }
+  return learnerPairs.filter((row) => row.section === frameworkState.section);
+}
+
+function getPhaseRecord(pair, phase) {
+  return phase === "pre" ? pair.pre : pair.post;
+}
+
+function getOppositePhase(phase) {
+  return phase === "pre" ? "post" : "pre";
+}
+
+function getCountsByRating(pairs, phase) {
+  const counts = new Map(ratingOrder.map((label) => [label, 0]));
+  pairs.forEach((pair) => {
+    const rating = getPhaseRecord(pair, phase).rating;
+    counts.set(rating, (counts.get(rating) || 0) + 1);
+  });
+  return ratingOrder.map((label) => ({
+    label,
+    count: counts.get(label) || 0
+  }));
+}
+
+function getSectionPairs(section) {
+  return learnerPairs.filter((row) => row.section === section);
+}
+
+function averageScore(pairs, phase) {
+  if (!pairs.length) {
+    return 0;
+  }
+  return pairs.reduce((sum, pair) => sum + getPhaseRecord(pair, phase).score, 0) / pairs.length;
+}
+
+function renderFrameworkKpis() {
+  if (!kpiLearnerCount || !kpiMeanScore || !kpiWeightedMean || !kpiTopFrequency) {
+    return;
+  }
+
+  const pairs = getPairsForFramework();
+  const phase = frameworkState.phase;
+  const total = pairs.length;
+
+  if (!total) {
+    kpiLearnerCount.textContent = "0";
+    kpiMeanScore.textContent = "0.00 / 40";
+    kpiWeightedMean.textContent = "0.00%";
+    kpiTopFrequency.textContent = "No data";
+    return;
+  }
+
+  const meanScore = averageScore(pairs, phase);
+  const weightedMeanPercent = pairs.reduce((sum, pair) => sum + getPhaseRecord(pair, phase).percent, 0) / total;
+  const counts = getCountsByRating(pairs, phase);
+  const top = counts.reduce((prev, curr) => (curr.count > prev.count ? curr : prev), counts[0]);
+  const topPercent = total > 0 ? (top.count / total) * 100 : 0;
+
+  kpiLearnerCount.textContent = `${total}`;
+  kpiMeanScore.textContent = `${meanScore.toFixed(2)} / 40`;
+  kpiWeightedMean.textContent = `${weightedMeanPercent.toFixed(2)}%`;
+  kpiTopFrequency.textContent = `${top.label}: ${top.count} (${topPercent.toFixed(2)}%)`;
+}
+
+function renderSlopegraph() {
+  if (!slopegraphShell) {
+    return;
+  }
+
+  const pairs = getPairsForFramework();
+  const width = 860;
+  const height = 360;
+  const margin = { top: 24, right: 92, bottom: 44, left: 92 };
+  const xPre = margin.left;
+  const xPost = width - margin.right;
+  const yTop = margin.top;
+  const yBottom = height - margin.bottom;
+
+  const yForScore = (score) => yBottom - ((score / 40) * (yBottom - yTop));
+  const ticks = [0, 10, 20, 30, 40];
+  const activePhase = frameworkState.phase;
+  const sectionText = frameworkState.section === "all"
+    ? "All Sections"
+    : `Grade 3-${frameworkState.section}`;
+
+  const grid = ticks
+    .map((tick) => {
+      const y = yForScore(tick);
+      return `
+        <line x1="${margin.left - 14}" y1="${y}" x2="${width - margin.right + 14}" y2="${y}" class="chart-grid" />
+        <text x="${margin.left - 20}" y="${y + 4}" text-anchor="end" class="chart-label">${tick}</text>
+      `;
+    })
+    .join("");
+
+  const lines = pairs
+    .map((pair) => {
+      const y1 = yForScore(pair.pre.score);
+      const y2 = yForScore(pair.post.score);
+      const delta = pair.post.score - pair.pre.score;
+      const lineClass = delta < 0 ? "slope-line slope-line--down" : "slope-line slope-line--up";
+      const preClass = activePhase === "pre" ? "slope-point slope-point--active" : "slope-point";
+      const postClass = activePhase === "post" ? "slope-point slope-point--active" : "slope-point";
+
+      return `
+        <line x1="${xPre}" y1="${y1}" x2="${xPost}" y2="${y2}" class="${lineClass}" />
+        <circle cx="${xPre}" cy="${y1}" r="${activePhase === "pre" ? 3.4 : 2.5}" class="${preClass}" />
+        <circle cx="${xPost}" cy="${y2}" r="${activePhase === "post" ? 3.4 : 2.5}" class="${postClass}" />
+      `;
+    })
+    .join("");
+
+  slopegraphShell.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+      ${grid}
+      <line x1="${xPre}" y1="${yTop - 6}" x2="${xPre}" y2="${yBottom + 6}" class="chart-axis" />
+      <line x1="${xPost}" y1="${yTop - 6}" x2="${xPost}" y2="${yBottom + 6}" class="chart-axis" />
+      <text x="${xPre}" y="${yBottom + 24}" text-anchor="middle" class="chart-title">Pre-test</text>
+      <text x="${xPost}" y="${yBottom + 24}" text-anchor="middle" class="chart-title">Post-test</text>
+      <text x="${width / 2}" y="${height - 10}" text-anchor="middle" class="chart-label">${sectionText} | ${pairs.length} learner trajectories</text>
+      ${lines}
+    </svg>
+  `;
+}
+
+function renderHistogram() {
+  if (!histogramShell) {
+    return;
+  }
+
+  const width = 860;
+  const height = 360;
+  const margin = { top: 26, right: 24, bottom: 74, left: 58 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const phase = frameworkState.phase;
+  const opposite = getOppositePhase(phase);
+  const sections = frameworkState.section === "all" ? ["Honest", "Patience"] : [frameworkState.section];
+
+  const currentSeries = sections.map((section) => ({
+    section,
+    counts: getCountsByRating(getSectionPairs(section), phase)
+  }));
+
+  const overlaySeries = sections.map((section) => ({
+    section,
+    counts: getCountsByRating(getSectionPairs(section), opposite)
+  }));
+
+  const maxCount = Math.max(
+    1,
+    ...currentSeries.flatMap((entry) => entry.counts.map((item) => item.count)),
+    ...overlaySeries.flatMap((entry) => entry.counts.map((item) => item.count))
+  );
+
+  const yForCount = (count) => margin.top + plotHeight - ((count / maxCount) * plotHeight);
+  const groupWidth = plotWidth / ratingOrder.length;
+  const barWidth = sections.length === 2 ? groupWidth * 0.26 : groupWidth * 0.42;
+
+  const bars = ratingOrder
+    .map((label, levelIndex) => {
+      const baseX = margin.left + (levelIndex * groupWidth);
+      return sections
+        .map((section, sectionIndex) => {
+          const currentCount = currentSeries
+            .find((entry) => entry.section === section)
+            .counts[levelIndex].count;
+          const overlayCount = overlaySeries
+            .find((entry) => entry.section === section)
+            .counts[levelIndex].count;
+
+          const spacing = sections.length === 2 ? groupWidth * 0.13 : groupWidth * 0.29;
+          const x = baseX + spacing + (sectionIndex * (barWidth + groupWidth * 0.08));
+          const yCurrent = yForCount(currentCount);
+          const hCurrent = margin.top + plotHeight - yCurrent;
+          const yOverlay = yForCount(overlayCount);
+          const hOverlay = margin.top + plotHeight - yOverlay;
+          const colorClass = section === "Honest" ? "hist-bar--honest" : "hist-bar--patience";
+
+          return `
+            <rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hCurrent}" class="${colorClass}" />
+            <rect x="${x + 1}" y="${yOverlay}" width="${Math.max(barWidth - 2, 2)}" height="${hOverlay}" class="hist-overlay" />
+            <text x="${x + (barWidth / 2)}" y="${yCurrent - 6}" text-anchor="middle" class="chart-label">${currentCount}</text>
+          `;
+        })
+        .join("");
+    })
+    .join("");
+
+  const yTicks = 4;
+  const tickMarks = Array.from({ length: yTicks + 1 }, (_, idx) => {
+    const value = Math.round((maxCount / yTicks) * idx);
+    const y = yForCount(value);
+    return `
+      <line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" class="chart-grid" />
+      <text x="${margin.left - 8}" y="${y + 4}" text-anchor="end" class="chart-label">${value}</text>
+    `;
+  }).join("");
+
+  const xLabels = ratingOrder
+    .map((label, idx) => {
+      const x = margin.left + (idx * groupWidth) + (groupWidth / 2);
+      return `<text x="${x}" y="${height - 28}" text-anchor="middle" class="chart-label">${label}</text>`;
+    })
+    .join("");
+
+  const legendY = height - 52;
+  const legendItems = frameworkState.section === "all"
+    ? `
+      <rect x="${margin.left}" y="${legendY - 10}" width="12" height="12" class="hist-bar--honest" />
+      <text x="${margin.left + 18}" y="${legendY}" class="chart-label">Honest (${phase})</text>
+      <rect x="${margin.left + 150}" y="${legendY - 10}" width="12" height="12" class="hist-bar--patience" />
+      <text x="${margin.left + 168}" y="${legendY}" class="chart-label">Patience (${phase})</text>
+      <line x1="${margin.left + 328}" y1="${legendY - 4}" x2="${margin.left + 344}" y2="${legendY - 4}" class="hist-overlay" />
+      <text x="${margin.left + 352}" y="${legendY}" class="chart-label">${opposite} overlay</text>
+    `
+    : `
+      <rect x="${margin.left}" y="${legendY - 10}" width="12" height="12" class="${frameworkState.section === "Honest" ? "hist-bar--honest" : "hist-bar--patience"}" />
+      <text x="${margin.left + 18}" y="${legendY}" class="chart-label">${frameworkState.section} (${phase})</text>
+      <line x1="${margin.left + 188}" y1="${legendY - 4}" x2="${margin.left + 204}" y2="${legendY - 4}" class="hist-overlay" />
+      <text x="${margin.left + 212}" y="${legendY}" class="chart-label">${opposite} overlay</text>
+    `;
+
+  histogramShell.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+      ${tickMarks}
+      <line x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${width - margin.right}" y2="${margin.top + plotHeight}" class="chart-axis" />
+      ${bars}
+      ${xLabels}
+      ${legendItems}
+    </svg>
+  `;
+
+  if (histogramNote) {
+    if (frameworkState.section === "all") {
+      const honestMean = averageScore(getSectionPairs("Honest"), phase);
+      const patienceMean = averageScore(getSectionPairs("Patience"), phase);
+      histogramNote.textContent = `${phase === "pre" ? "Pre-test" : "Post-test"} section means: Honest ${honestMean.toFixed(2)} vs Patience ${patienceMean.toFixed(2)} (out of 40).`;
+    } else {
+      const sectionPairs = getSectionPairs(frameworkState.section);
+      const meanCurrent = averageScore(sectionPairs, phase);
+      const meanOther = averageScore(sectionPairs, opposite);
+      const delta = meanCurrent - meanOther;
+      const signed = `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`;
+      histogramNote.textContent = `${frameworkState.section}: ${phase} mean ${meanCurrent.toFixed(2)} vs ${opposite} mean ${meanOther.toFixed(2)} (delta ${signed}).`;
+    }
+  }
+}
+
+function radarPoint(cx, cy, radius, angleDeg) {
+  const radians = (Math.PI / 180) * (angleDeg - 90);
+  return {
+    x: cx + (radius * Math.cos(radians)),
+    y: cy + (radius * Math.sin(radians))
+  };
+}
+
+function renderRadarPanel(profile) {
+  const width = 360;
+  const height = 320;
+  const cx = 180;
+  const cy = 164;
+  const maxRadius = 108;
+  const axisCount = profile.labels.length;
+  const maxValue = 5;
+
+  const rings = Array.from({ length: 5 }, (_, ringIndex) => {
+    const ringRadius = ((ringIndex + 1) / 5) * maxRadius;
+    const points = profile.labels
+      .map((_, idx) => radarPoint(cx, cy, ringRadius, (360 / axisCount) * idx))
+      .map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+      .join(" ");
+    return `<polygon points="${points}" class="radar-grid" />`;
+  }).join("");
+
+  const axes = profile.labels
+    .map((label, idx) => {
+      const end = radarPoint(cx, cy, maxRadius, (360 / axisCount) * idx);
+      const labelPoint = radarPoint(cx, cy, maxRadius + 20, (360 / axisCount) * idx);
+      const anchor = labelPoint.x < cx - 8 ? "end" : labelPoint.x > cx + 8 ? "start" : "middle";
+      return `
+        <line x1="${cx}" y1="${cy}" x2="${end.x.toFixed(2)}" y2="${end.y.toFixed(2)}" class="radar-axis" />
+        <text x="${labelPoint.x.toFixed(2)}" y="${labelPoint.y.toFixed(2)}" text-anchor="${anchor}" class="chart-label">${label}</text>
+      `;
+    })
+    .join("");
+
+  const valuePoints = profile.values
+    .map((value, idx) => {
+      const radius = (Math.max(0, Math.min(value, maxValue)) / maxValue) * maxRadius;
+      return radarPoint(cx, cy, radius, (360 / axisCount) * idx);
+    });
+
+  const polygonPoints = valuePoints
+    .map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+    .join(" ");
+
+  const vertices = valuePoints
+    .map((point) => `<circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="3" class="radar-point" fill="${profile.color}" />`)
+    .join("");
+
+  const meanValue = profile.values.reduce((sum, value) => sum + value, 0) / profile.values.length;
+
+  return `
+    <article class="radar-panel">
+      <h4>${profile.title}</h4>
+      <p>${profile.subtitle} | Mean: ${meanValue.toFixed(2)} / 5</p>
+      <svg viewBox="0 0 ${width} ${height}" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+        ${rings}
+        ${axes}
+        <polygon points="${polygonPoints}" class="radar-shape" fill="${profile.color}" stroke="${profile.color}" />
+        ${vertices}
+      </svg>
+    </article>
+  `;
+}
+
+function renderRadarPanels() {
+  if (!radarPanels) {
+    return;
+  }
+
+  let keys = ["teachers", "it"];
+  if (frameworkState.evaluatorRole === "teachers") {
+    keys = ["teachers"];
+  }
+  if (frameworkState.evaluatorRole === "it") {
+    keys = ["it"];
+  }
+
+  radarPanels.innerHTML = keys
+    .map((key) => renderRadarPanel(evaluatorProfiles[key]))
+    .join("");
+}
+
+function renderFrameworkDashboard() {
+  renderFrameworkKpis();
+  renderSlopegraph();
+  renderHistogram();
+  renderRadarPanels();
+}
+
+function setupFrameworkControls() {
+  updatePillSelection(phaseToggleRoot, "data-phase", frameworkState.phase);
+
+  sectionViewFilter?.addEventListener("change", () => {
+    frameworkState.section = sectionViewFilter.value;
+    renderFrameworkDashboard();
+  });
+
+  evaluatorRoleFilter?.addEventListener("change", () => {
+    frameworkState.evaluatorRole = evaluatorRoleFilter.value;
+    renderFrameworkDashboard();
+  });
+
+  phaseToggleRoot?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const nextPhase = target.getAttribute("data-phase");
+    if (!nextPhase || nextPhase === frameworkState.phase) {
+      return;
+    }
+
+    frameworkState.phase = nextPhase;
+    updatePillSelection(phaseToggleRoot, "data-phase", frameworkState.phase);
+    renderFrameworkDashboard();
+  });
+
+  renderFrameworkDashboard();
 }
 
 function renderStats() {
@@ -795,6 +1218,7 @@ function setupAnimations() {
 renderBaseline();
 renderDistributionComparison();
 setupComparisonControls();
+setupFrameworkControls();
 renderStats();
 renderScoreRows("qualityBars", researchData.qualityScores);
 renderScoreRows("itBars", researchData.itExpertScores);

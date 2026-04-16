@@ -106,6 +106,92 @@
         </div>
       </section>
 
+      <section class="chapter chapter--framework" id="framework">
+        <div class="chapter__inner">
+          <h2 class="chapter__title reveal">Computational Visualization and Performance Analytics Framework</h2>
+          <p class="chapter__text reveal">
+            Interactive analysis of ALNAT pre-post performance and evaluator results using
+            section, phase, and role filters based on documented thesis values.
+          </p>
+
+          <div class="framework-controls reveal">
+            <label class="control" for="sectionViewFilter">
+              <span>Section Filter</span>
+              <select id="sectionViewFilter">
+                <option value="all">All Sections (56)</option>
+                <option value="Honest">Grade 3-Honest (25)</option>
+                <option value="Patience">Grade 3-Patience (31)</option>
+              </select>
+            </label>
+
+            <div class="control">
+              <span>Pre/Post Toggle</span>
+              <div class="pill-group" id="phaseToggle" role="group" aria-label="ALNAT phase toggle">
+                <button class="pill-btn" type="button" data-phase="pre">Pre-test</button>
+                <button class="pill-btn is-active" type="button" data-phase="post">Post-test</button>
+              </div>
+            </div>
+
+            <label class="control" for="evaluatorRoleFilter">
+              <span>Evaluator Role Filter</span>
+              <select id="evaluatorRoleFilter">
+                <option value="all">Teachers + IT Expert</option>
+                <option value="teachers">Teachers + Master Teacher</option>
+                <option value="it">IT Expert</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="framework-kpis reveal" id="frameworkKpis">
+            <article class="kpi-card">
+              <h3>Matched Learners</h3>
+              <p id="kpiLearnerCount">56</p>
+            </article>
+            <article class="kpi-card">
+              <h3>Mean Score</h3>
+              <p id="kpiMeanScore">32.93 / 40</p>
+            </article>
+            <article class="kpi-card">
+              <h3>Weighted Mean (%)</h3>
+              <p id="kpiWeightedMean">82.32%</p>
+            </article>
+            <article class="kpi-card">
+              <h3>Top Frequency</h3>
+              <p id="kpiTopFrequency">Developing: 14 (25.00%)</p>
+            </article>
+          </div>
+
+          <div class="viz-grid reveal">
+            <article class="viz-card">
+              <h3>Paired Slopegraph: Pre-test to Post-test</h3>
+              <p class="viz-subtitle">Each line is one learner trajectory for paired sample interpretation.</p>
+              <div class="svg-shell" id="slopegraphShell" role="img" aria-label="Paired slopegraph"></div>
+              <p class="viz-footnote">
+                Paired sample test reference: t(55) = 33.96, mean difference = 19.14,
+                95% CI = 18.01 to 20.27.
+              </p>
+            </article>
+
+            <article class="viz-card">
+              <h3>Distribution Histogram with Overlay</h3>
+              <p class="viz-subtitle">
+                Section-level ALNAT classification counts with opposite-phase outlines to show shift.
+              </p>
+              <div class="svg-shell" id="histogramShell" role="img" aria-label="ALNAT histogram"></div>
+              <p class="viz-footnote" id="histogramNote"></p>
+            </article>
+          </div>
+
+          <article class="viz-card reveal">
+            <h3>LRMDS and ISO Radar Comparison</h3>
+            <p class="viz-subtitle">
+              Teachers/Master Teacher scores use LRMDS totals; IT Expert uses ISO 9621-1 factor scores.
+            </p>
+            <div class="radar-panels" id="radarPanels"></div>
+          </article>
+        </div>
+      </section>
+
       <section class="chapter chapter--baseline" id="baseline">
         <div class="chapter__inner">
           <h2 class="chapter__title reveal">Chapter 4 Baseline: ALNAT Pretest</h2>
