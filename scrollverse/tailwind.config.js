@@ -4,21 +4,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#f0f7fa",
-        muted: "#9fb3c0",
-        deep: "#061019",
-        panel: "#0f2133",
-        aqua: "#23d7ba",
-        amber: "#ffba52",
-        coral: "#ff7d65",
-        sky: "#7ec6ff"
+        ink: "#1f2a37",
+        muted: "#5f6b7a",
+        deep: "#eef3f8",
+        panel: "#ffffff",
+        aqua: "#2f9e9a",
+        amber: "#c8872f",
+        coral: "#d56d5f",
+        sky: "#6f92c9"
       },
       boxShadow: {
-        soft: "0 18px 56px rgba(0, 0, 0, 0.28)"
+        soft: "0 14px 38px rgba(31, 42, 55, 0.12)"
       },
       fontFamily: {
-        display: ["Syne", "sans-serif"],
-        body: ["Space Grotesk", "sans-serif"]
+        display: ["Fraunces", "serif"],
+        body: ["Plus Jakarta Sans", "sans-serif"]
       }
     }
   },

@@ -16,6 +16,13 @@ const chapters = [
   { id: "chapter-conclusion", label: "Conclusion" }
 ];
 
+const proponents = [
+  "Rizza Myr S. Cereno",
+  "Arabella Arciga",
+  "Cielo Sentin",
+  "Dominic Heinrich Poblete"
+];
+
 function ratioWidth(value, max) {
   if (!max) {
     return 0;
@@ -77,7 +84,7 @@ function ChapterActions({ chapterId, onJump }) {
         <button
           type="button"
           onClick={() => onJump(next.id)}
-          className="rounded-full border border-aqua/45 bg-aqua/15 px-4 py-2 text-xs font-semibold tracking-wide text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/25"
+          className="rounded-full border border-aqua/40 bg-aqua/10 px-4 py-2 text-xs font-semibold tracking-wide text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/20"
         >
           Next Chapter: {next.label}
         </button>
@@ -85,7 +92,7 @@ function ChapterActions({ chapterId, onJump }) {
       <button
         type="button"
         onClick={() => onJump("chapter-hero")}
-        className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs font-semibold tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white/10"
+        className="rounded-full border border-ink/20 bg-white/70 px-4 py-2 text-xs font-semibold tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white"
       >
         Back To Intro
       </button>
@@ -130,7 +137,7 @@ function RadarPanel({ profile }) {
             key={`ring-${index}`}
             points={points}
             fill="none"
-            stroke="rgba(255,255,255,0.15)"
+            stroke="rgba(31,42,55,0.16)"
             strokeWidth="1"
           />
         ))}
@@ -146,7 +153,7 @@ function RadarPanel({ profile }) {
                 y1={cy}
                 x2={end.x.toFixed(2)}
                 y2={end.y.toFixed(2)}
-                stroke="rgba(255,255,255,0.22)"
+                stroke="rgba(31,42,55,0.22)"
                 strokeWidth="1"
               />
               <text
@@ -217,6 +224,8 @@ export default function App() {
 
   const [learnerSearch, setLearnerSearch] = useState("");
   const [learnerRating, setLearnerRating] = useState("all");
+
+  const fieldClass = "mt-2 w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm text-ink outline-none ring-aqua/35 focus:ring";
 
   const jumpToChapter = (chapterId) => {
     const element = document.getElementById(chapterId);
@@ -578,58 +587,84 @@ export default function App() {
     <div className="relative min-h-screen">
       <div className="app-grain" aria-hidden="true" />
 
-      <header id="chapter-hero" className="relative z-10 px-4 pb-10 pt-20 sm:px-6 lg:px-8">
+      <header id="chapter-hero" className="relative z-10 flex min-h-[92vh] items-center px-4 pb-16 pt-20 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="mx-auto max-w-6xl"
+          className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-aqua">PowerMathSaya Research Visual</p>
-          <h1 className="mt-4 max-w-4xl font-display text-4xl leading-[0.95] sm:text-5xl lg:text-7xl">
-            Data, Results, and Comparison Across Chapters 3 To 5
-          </h1>
-          <p className="mt-6 max-w-3xl text-sm leading-relaxed text-muted sm:text-lg">
-            A modern React and Tailwind interactive evidence story of Grade 3 numeracy gains at
-            San Isidro Talisay Elementary School.
-          </p>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-aqua">Undergraduate Thesis Visual Story</p>
+            <h1 className="mt-4 max-w-4xl font-display text-4xl leading-[1.02] sm:text-5xl lg:text-6xl">
+              Enhancing Numeracy Skills Of Grade 3 Learners Through PowerMathSaya
+            </h1>
+            <p className="mt-5 max-w-3xl text-sm leading-relaxed text-muted sm:text-base">
+              College of Education, Daet Camarines Norte. Scroll down for a continuous narrative from
+              research context to charts, statistical results, and evaluator findings.
+            </p>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              ["Learners", "56"],
-              ["Evaluators", "12"],
-              ["Data Sources", "Ch. 3, 4, and 5"],
-              ["Paired t-test", "t(55) = 33.96"],
-              ["Runtime Mode", runtimeMode],
-              ["Progress", `${Math.round(progress)}%`]
-            ].map(([label, value]) => (
-              <div key={label} className="glass-panel rounded-2xl p-4">
-                <p className="text-xs uppercase tracking-[0.12em] text-muted">{label}</p>
-                <p className="mt-2 text-lg font-semibold text-ink">{value}</p>
-              </div>
-            ))}
+            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.12em] text-muted">Research Proponents</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {proponents.map((name) => (
+                <span key={name} className="landing-pill rounded-full px-3 py-1.5 text-xs font-semibold text-ink">
+                  {name}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => jumpToChapter("chapter-method")}
+                className="rounded-full border border-aqua/40 bg-aqua/10 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/20"
+              >
+                Start Scroll Story
+              </button>
+              <button
+                type="button"
+                onClick={() => jumpToChapter("chapter-framework")}
+                className="rounded-full border border-ink/20 bg-white/80 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white"
+              >
+                Jump To Charts
+              </button>
+            </div>
+
+            <motion.p
+              className="mt-8 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted"
+              animate={reducedMotion ? undefined : { y: [0, 5, 0] }}
+              transition={reducedMotion ? undefined : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              Scroll To Explore Data
+            </motion.p>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => jumpToChapter("chapter-method")}
-              className="rounded-full border border-aqua/50 bg-aqua/15 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/30"
-            >
-              Start Chapter Flow
-            </button>
-            <button
-              type="button"
-              onClick={() => jumpToChapter("chapter-framework")}
-              className="rounded-full border border-white/20 bg-white/5 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white/10"
-            >
-              Open Analytics Framework
-            </button>
-          </div>
+          <aside className="glass-panel rounded-3xl p-5 sm:p-6">
+            <h2 className="text-base font-semibold text-ink">Research Snapshot</h2>
+            <p className="mt-2 text-sm text-muted">Simple essentials before diving into chapter-by-chapter analytics.</p>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {[
+                ["Learners", "56"],
+                ["Evaluators", "12"],
+                ["Paired t-test", "t(55) = 33.96"],
+                ["Runtime", runtimeMode],
+                ["Chapters", "3, 4, and 5"],
+                ["Progress", `${Math.round(progress)}%`]
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-ink/10 bg-white/75 p-3">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted">{label}</p>
+                  <p className="mt-1.5 text-sm font-semibold text-ink">{value}</p>
+                </div>
+              ))}
+            </div>
+          </aside>
         </motion.div>
       </header>
 
-      <div className="sticky top-0 z-30 border-y border-white/10 bg-[#07111acc]/95 backdrop-blur-xl">
+      <div className="narrative-divider" aria-hidden="true" />
+
+      <div className="sticky top-0 z-30 border-y border-ink/10 bg-[#f8fbffd9]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
           {chapters.map((chapter) => {
             const active = activeChapter === chapter.id;
@@ -640,8 +675,8 @@ export default function App() {
                 onClick={() => jumpToChapter(chapter.id)}
                 className={`whitespace-nowrap rounded-full border px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition ${
                   active
-                    ? "border-aqua/70 bg-aqua/20 text-aqua"
-                    : "border-white/20 bg-white/5 text-muted hover:bg-white/10 hover:text-ink"
+                    ? "border-aqua/60 bg-aqua/15 text-aqua"
+                    : "border-ink/20 bg-white/80 text-muted hover:bg-white hover:text-ink"
                 }`}
               >
                 {chapter.label}
@@ -649,7 +684,7 @@ export default function App() {
             );
           })}
         </div>
-        <div className="h-1 w-full bg-white/10">
+        <div className="h-1 w-full bg-ink/10">
           <motion.div
             className="h-full bg-gradient-to-r from-aqua via-sky to-coral"
             animate={{ width: `${progress}%` }}
@@ -697,7 +732,7 @@ export default function App() {
               <label className="glass-panel rounded-2xl p-4 text-sm">
                 <span className="text-xs uppercase tracking-[0.1em] text-muted">Section Filter</span>
                 <select
-                  className="mt-2 w-full rounded-lg border border-white/20 bg-[#071422] px-3 py-2 text-sm text-ink outline-none ring-aqua/40 focus:ring"
+                  className={fieldClass}
                   value={frameworkSection}
                   onChange={(event) => setFrameworkSection(event.target.value)}
                 >
@@ -726,7 +761,7 @@ export default function App() {
               <label className="glass-panel rounded-2xl p-4 text-sm">
                 <span className="text-xs uppercase tracking-[0.1em] text-muted">Evaluator Role Filter</span>
                 <select
-                  className="mt-2 w-full rounded-lg border border-white/20 bg-[#071422] px-3 py-2 text-sm text-ink outline-none ring-aqua/40 focus:ring"
+                  className={fieldClass}
                   value={frameworkRole}
                   onChange={(event) => setFrameworkRole(event.target.value)}
                 >
@@ -786,7 +821,7 @@ export default function App() {
                   Each line is one learner trajectory for paired sample interpretation.
                 </p>
 
-                <div className="mt-4 overflow-hidden rounded-xl border border-white/15 bg-[#040d17]">
+                <div className="mt-4 overflow-hidden rounded-xl border border-ink/15 bg-white/85">
                   <svg viewBox={`0 0 ${slopeGraph.width} ${slopeGraph.height}`} className="h-auto w-full" aria-hidden="true">
                     {slopeGraph.ticks.map((tick) => {
                       const y = slopeGraph.toY(tick);
@@ -797,7 +832,7 @@ export default function App() {
                             y1={y}
                             x2={slopeGraph.xPost + 14}
                             y2={y}
-                            stroke="rgba(255,255,255,0.11)"
+                            stroke="rgba(31,42,55,0.14)"
                             strokeWidth="1"
                           />
                           <text x={slopeGraph.xPre - 20} y={y + 4} textAnchor="end" className="fill-muted text-[12px]">
@@ -812,14 +847,14 @@ export default function App() {
                       y1={slopeGraph.yTop - 6}
                       x2={slopeGraph.xPre}
                       y2={slopeGraph.yBottom + 6}
-                      stroke="rgba(255,255,255,0.24)"
+                      stroke="rgba(31,42,55,0.26)"
                     />
                     <line
                       x1={slopeGraph.xPost}
                       y1={slopeGraph.yTop - 6}
                       x2={slopeGraph.xPost}
                       y2={slopeGraph.yBottom + 6}
-                      stroke="rgba(255,255,255,0.24)"
+                      stroke="rgba(31,42,55,0.26)"
                     />
 
                     <text x={slopeGraph.xPre} y={slopeGraph.yBottom + 24} textAnchor="middle" className="fill-ink text-[12px] font-semibold">
@@ -871,7 +906,7 @@ export default function App() {
                   Section-level ALNAT classification counts with optional opposite-phase outlines.
                 </p>
 
-                <div className="mt-4 overflow-hidden rounded-xl border border-white/15 bg-[#040d17]">
+                <div className="mt-4 overflow-hidden rounded-xl border border-ink/15 bg-white/85">
                   <svg viewBox={`0 0 ${histogram.width} ${histogram.height}`} className="h-auto w-full" aria-hidden="true">
                     {Array.from({ length: 5 }, (_, idx) => {
                       const value = Math.round((histogram.maxCount / 4) * idx);
@@ -883,7 +918,7 @@ export default function App() {
                             y1={y}
                             x2={histogram.width - histogram.margin.right}
                             y2={y}
-                            stroke="rgba(255,255,255,0.11)"
+                            stroke="rgba(31,42,55,0.14)"
                           />
                           <text x={histogram.margin.left - 8} y={y + 4} textAnchor="end" className="fill-muted text-[12px]">
                             {value}
@@ -897,7 +932,7 @@ export default function App() {
                       y1={histogram.margin.top + histogram.plotHeight}
                       x2={histogram.width - histogram.margin.right}
                       y2={histogram.margin.top + histogram.plotHeight}
-                      stroke="rgba(255,255,255,0.24)"
+                      stroke="rgba(31,42,55,0.26)"
                     />
 
                     {histogram.bars.map((bar) => (
@@ -975,7 +1010,7 @@ export default function App() {
             <div className="mt-6 glass-panel rounded-2xl p-5">
               <div className="grid gap-3 sm:grid-cols-[220px_1fr_auto] sm:items-center">
                 <p className="text-sm font-semibold">Needs Major Support</p>
-                <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                <div className="h-3 overflow-hidden rounded-full bg-ink/10">
                   <motion.div
                     initial={{ width: 0 }}
                     whileInView={{ width: "100%" }}
@@ -1013,7 +1048,7 @@ export default function App() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ delay: index * 0.08, duration: 0.45 }}
-                  className="glass-panel rounded-2xl bg-gradient-to-b from-amber/20 to-[#08141f] p-4"
+                  className="glass-panel rounded-2xl bg-gradient-to-b from-amber/10 to-white p-4"
                 >
                   <h3 className="text-base font-semibold text-ink">{title}</h3>
                   <p className="mt-2 text-sm text-muted">{copy}</p>
@@ -1068,19 +1103,19 @@ export default function App() {
               </div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-white/15 bg-sky/10 px-4 py-3 text-sm text-muted">
+            <div className="mt-4 rounded-xl border border-ink/15 bg-sky/10 px-4 py-3 text-sm text-muted">
               <strong className="text-ink">Insight:</strong> {comparisonInsight}
             </div>
 
             <div className="mt-4 glass-panel rounded-2xl p-5">
               <div className="space-y-4">
                 {comparisonRows.map((row) => (
-                  <div key={row.label} className="grid gap-3 border-b border-white/10 pb-4 last:border-b-0 last:pb-0 md:grid-cols-[190px_1fr]">
+                  <div key={row.label} className="grid gap-3 border-b border-ink/10 pb-4 last:border-b-0 last:pb-0 md:grid-cols-[190px_1fr]">
                     <p className="text-sm font-semibold text-ink">{row.label}</p>
                     <div className="space-y-2">
                       <div className="grid gap-3 sm:grid-cols-[120px_1fr_auto] sm:items-center">
                         <span className="text-[11px] uppercase tracking-[0.1em] text-muted">{comparisonSeries.nameA}</span>
-                        <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-2.5 overflow-hidden rounded-full bg-ink/10">
                           <motion.div
                             initial={{ width: 0 }}
                             whileInView={{ width: `${row.widthA}%` }}
@@ -1094,7 +1129,7 @@ export default function App() {
 
                       <div className="grid gap-3 sm:grid-cols-[120px_1fr_auto] sm:items-center">
                         <span className="text-[11px] uppercase tracking-[0.1em] text-muted">{comparisonSeries.nameB}</span>
-                        <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-2.5 overflow-hidden rounded-full bg-ink/10">
                           <motion.div
                             initial={{ width: 0 }}
                             whileInView={{ width: `${row.widthB}%` }}
@@ -1116,7 +1151,7 @@ export default function App() {
                 <h3 className="text-sm font-semibold text-ink">Chapter 4 Detailed Posttest</h3>
                 <ul className="mt-3 space-y-2 text-sm text-muted">
                   {researchData.posttestChapter4.map((row) => (
-                    <li key={row.label} className="flex items-center justify-between border-b border-white/10 pb-2 last:border-b-0 last:pb-0">
+                    <li key={row.label} className="flex items-center justify-between border-b border-ink/10 pb-2 last:border-b-0 last:pb-0">
                       <span>{row.label}</span>
                       <strong className="text-ink">{row.count} ({row.percent.toFixed(2)}%)</strong>
                     </li>
@@ -1128,7 +1163,7 @@ export default function App() {
                 <h3 className="text-sm font-semibold text-ink">Chapter 5 Summary Values</h3>
                 <ul className="mt-3 space-y-2 text-sm text-muted">
                   {researchData.posttestChapter5Summary.map((row) => (
-                    <li key={row.label} className="flex items-center justify-between border-b border-white/10 pb-2 last:border-b-0 last:pb-0">
+                    <li key={row.label} className="flex items-center justify-between border-b border-ink/10 pb-2 last:border-b-0 last:pb-0">
                       <span>{row.label}</span>
                       <strong className="text-ink">{row.count} ({row.percent.toFixed(2)}%)</strong>
                     </li>
@@ -1196,7 +1231,7 @@ export default function App() {
                     return (
                       <div key={row.label} className="grid gap-2 sm:grid-cols-[180px_1fr_auto] sm:items-center">
                         <span className="text-sm text-muted">{row.label}</span>
-                        <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-2.5 overflow-hidden rounded-full bg-ink/10">
                           <motion.div
                             initial={{ width: 0 }}
                             whileInView={{ width: `${width}%` }}
@@ -1220,7 +1255,7 @@ export default function App() {
                     return (
                       <div key={row.label} className="grid gap-2 sm:grid-cols-[180px_1fr_auto] sm:items-center">
                         <span className="text-sm text-muted">{row.label}</span>
-                        <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-2.5 overflow-hidden rounded-full bg-ink/10">
                           <motion.div
                             initial={{ width: 0 }}
                             whileInView={{ width: `${width}%` }}
@@ -1256,7 +1291,7 @@ export default function App() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ delay: index * 0.03, duration: 0.4 }}
-                  className="glass-panel rounded-2xl bg-gradient-to-br from-coral/15 to-[#08131d] p-4"
+                  className="glass-panel rounded-2xl bg-gradient-to-br from-coral/10 to-white p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-sm text-ink">{item.text}</p>
@@ -1286,7 +1321,7 @@ export default function App() {
                     value={learnerSearch}
                     onChange={(event) => setLearnerSearch(event.target.value)}
                     placeholder="Type L18 or 18"
-                    className="mt-2 w-full rounded-lg border border-white/20 bg-[#071422] px-3 py-2 text-sm text-ink outline-none ring-aqua/40 focus:ring"
+                    className={fieldClass}
                   />
                 </label>
 
@@ -1295,7 +1330,7 @@ export default function App() {
                   <select
                     value={learnerRating}
                     onChange={(event) => setLearnerRating(event.target.value)}
-                    className="mt-2 w-full rounded-lg border border-white/20 bg-[#071422] px-3 py-2 text-sm text-ink outline-none ring-aqua/40 focus:ring"
+                    className={fieldClass}
                   >
                     <option value="all">All Ratings</option>
                     <option value="Needs Major Support">Needs Major Support</option>
@@ -1312,7 +1347,7 @@ export default function App() {
                     setLearnerSearch("");
                     setLearnerRating("all");
                   }}
-                  className="self-end rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-ink transition hover:bg-white/10"
+                  className="self-end rounded-xl border border-ink/20 bg-white/80 px-4 py-2 text-sm font-medium text-ink transition hover:bg-white"
                 >
                   Reset Filters
                 </button>
@@ -1329,7 +1364,7 @@ export default function App() {
                   ["Avg Posttest %", `${learnerInsights.avgPost.toFixed(2)}%`],
                   ["Mean Score Gain", `${learnerInsights.meanGain >= 0 ? "+" : ""}${learnerInsights.meanGain.toFixed(2)}`]
                 ].map(([label, value]) => (
-                  <article key={label} className="rounded-xl border border-white/15 bg-white/5 p-3">
+                  <article key={label} className="rounded-xl border border-ink/15 bg-white/75 p-3">
                     <p className="text-[11px] uppercase tracking-[0.1em] text-muted">{label}</p>
                     <p className="mt-2 text-lg font-semibold text-ink">{value}</p>
                   </article>
@@ -1342,9 +1377,9 @@ export default function App() {
                 <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">
                   Table 1: ALNAT Pretest (Before PowerMathSaya)
                 </summary>
-                <div className="table-scroll overflow-x-auto border-t border-white/10">
+                <div className="table-scroll overflow-x-auto border-t border-ink/10">
                   <table className="min-w-[680px] w-full text-left text-sm">
-                    <thead className="bg-[#0c1f2f] text-ink">
+                    <thead className="bg-[#e3ebf4] text-ink">
                       <tr>
                         <th className="px-3 py-2">Learner</th>
                         <th className="px-3 py-2">Score</th>
@@ -1378,9 +1413,9 @@ export default function App() {
                 <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">
                   Table 2: Posttest (After PowerMathSaya)
                 </summary>
-                <div className="table-scroll overflow-x-auto border-t border-white/10">
+                <div className="table-scroll overflow-x-auto border-t border-ink/10">
                   <table className="min-w-[680px] w-full text-left text-sm">
-                    <thead className="bg-[#0c1f2f] text-ink">
+                    <thead className="bg-[#e3ebf4] text-ink">
                       <tr>
                         <th className="px-3 py-2">Learner</th>
                         <th className="px-3 py-2">Score</th>
@@ -1435,7 +1470,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => jumpToChapter("chapter-framework")}
-                  className="rounded-full border border-white/20 bg-white/5 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white/10"
+                  className="rounded-full border border-ink/20 bg-white/80 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white"
                 >
                   Jump To Analytics Framework
                 </button>

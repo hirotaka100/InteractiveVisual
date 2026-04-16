@@ -1,20 +1,25 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Syne:wght@600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   @apply m-0 min-h-screen overflow-x-hidden bg-deep text-ink font-body antialiased;
   background-image:
-    radial-gradient(circle at 12% 12%, rgba(35, 215, 186, 0.22), transparent 34%),
-    radial-gradient(circle at 80% 8%, rgba(255, 186, 82, 0.2), transparent 31%),
-    radial-gradient(circle at 85% 58%, rgba(126, 198, 255, 0.16), transparent 36%),
-    linear-gradient(180deg, #03080d 0%, #07111a 45%, #102131 100%);
+    radial-gradient(circle at 12% 10%, rgba(47, 158, 154, 0.17), transparent 42%),
+    radial-gradient(circle at 86% 8%, rgba(200, 135, 47, 0.14), transparent 34%),
+    radial-gradient(circle at 82% 72%, rgba(111, 146, 201, 0.14), transparent 42%),
+    linear-gradient(180deg, #f8fbff 0%, #f4f7fb 48%, #eef3f8 100%);
 }
 
 #root {
@@ -25,18 +30,24 @@ body {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.13;
+  opacity: 0.06;
   z-index: 1;
-  background-image: radial-gradient(circle at 1px 1px, #ffffff 0.85px, transparent 0.85px);
-  background-size: 3px 3px;
+  background-image: radial-gradient(circle at 1px 1px, rgba(31, 42, 55, 0.14) 0.7px, transparent 0.7px);
+  background-size: 4px 4px;
 }
 
 .glass-panel {
-  @apply border border-white/15 bg-panel/70 backdrop-blur-md shadow-soft;
+  @apply border border-ink/10 bg-panel/85 shadow-soft;
+  backdrop-filter: blur(6px);
 }
 
 .chapter-shell {
-  @apply relative mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 lg:px-8;
+  @apply relative mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8;
+  scroll-margin-top: 86px;
+}
+
+.chapter-shell + .chapter-shell {
+  border-top: 1px solid rgba(31, 42, 55, 0.08);
 }
 
 .section-title {
@@ -48,11 +59,38 @@ body {
 }
 
 .pill-btn {
-  @apply rounded-full border border-white/20 bg-white/5 px-3 py-2 text-xs font-medium text-ink transition duration-200 hover:-translate-y-0.5 hover:bg-white/10;
+  @apply rounded-full border border-ink/20 bg-white/80 px-3 py-2 text-xs font-medium text-ink transition duration-200 hover:-translate-y-0.5 hover:bg-white;
 }
 
 .pill-btn-active {
-  @apply border-aqua/70 bg-aqua/20;
+  @apply border-aqua/60 bg-aqua/15 text-aqua;
+}
+
+.landing-pill {
+  border: 1px solid rgba(31, 42, 55, 0.12);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.narrative-divider {
+  position: relative;
+  height: 86px;
+  overflow: hidden;
+}
+
+.narrative-divider::before {
+  content: "";
+  position: absolute;
+  inset: 24px 12% 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(47, 158, 154, 0.2), rgba(111, 146, 201, 0.14), rgba(213, 109, 95, 0.18));
+  filter: blur(14px);
+}
+
+.narrative-divider::after {
+  content: "";
+  position: absolute;
+  inset: 38px 22% 0;
+  border-top: 1px dashed rgba(31, 42, 55, 0.22);
 }
 
 .table-scroll::-webkit-scrollbar {
