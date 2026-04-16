@@ -1,85 +1,66 @@
-# Scrollverse Demo
+# PowerMathSaya Interactive Visualization (React + Tailwind)
 
-An interactive, scroll-driven website prototype using **GSAP + ScrollTrigger**.
+Modernized research dashboard for PowerMathSaya using:
 
-## What this demo includes
+- React (Vite)
+- Tailwind CSS
+- Framer Motion animations
 
-- Hero pinning with layered depth animation.
-- Parallax typography field with independent motion layers.
-- Horizontal gallery section controlled by vertical scrolling.
-- Morphing clip-path corridor animation.
-- Real-time scroll progress indicator.
-- Reduced-motion support and keyboard-safe interactions.
-- Responsive behavior for mobile and desktop.
+## What this app includes
 
-## Files
+- Chapter-based storytelling with interactive chapter buttons and jump navigation.
+- Data-driven ALNAT analytics from documented thesis values.
+- Framework dashboard with focus/compare mode, section filter, and evaluator role filter.
+- Paired slopegraph, distribution histogram with optional overlay, and radar profile charts.
+- Pretest/posttest learner tables with search and rating filters.
+- Responsive layout for desktop and mobile.
+- Reduced-motion-aware behavior.
 
-- `index.html`: semantic structure and content sections.
-- `styles.css`: design system tokens, layout, visual style, and responsive rules.
-- `script.js`: animation timelines, ScrollTrigger logic, progress logic, and accessibility-aware behavior.
+## Project structure
 
-## Run locally
+- `index.html`: Vite app entry with React mount.
+- `src/main.jsx`: React bootstrap.
+- `src/App.jsx`: page sections, interactions, and visual components.
+- `src/data/researchData.js`: all research datasets and parsed learner pairs.
+- `src/index.css`: Tailwind layers plus custom visual utilities.
+- `tailwind.config.js`: Tailwind theme extension.
+- `postcss.config.js`: PostCSS pipeline.
+- `vercel.json`: Vercel build/output/header configuration.
 
-Because this project uses CDN scripts, you can run it in any static server setup.
+## Local development
 
-Simple option from this folder:
+From `scrollverse`:
 
 ```powershell
-# If Python is available
-python -m http.server 8080
+npm install
+npm run dev
 ```
 
-Then open:
+Open the local URL printed by Vite.
 
-- http://localhost:8080
+## Production build
 
-## Deploy Plan (Vercel)
+```powershell
+npm run build
+npm run preview
+```
 
-Use this sequence so the site deploys from the `scrollverse` folder directly.
+## Deploy on Vercel (browser flow)
 
-This folder already includes `vercel.json` for stable headers and static delivery defaults.
+1. Import repository in Vercel.
+2. Set `Root Directory` to `scrollverse`.
+3. Keep framework auto-detection (Vite).
+4. Confirm build settings:
+   - Install Command: `npm install`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+5. Deploy.
 
-1. Push this project to GitHub, GitLab, or Bitbucket.
-2. Open Vercel and click `Add New...` then `Project`.
-3. Import the repository.
-4. In project settings, set `Root Directory` to `scrollverse`.
-5. Set `Framework Preset` to `Other`.
-6. Leave `Build Command` empty.
-7. Set `Output Directory` to `.`.
-8. Click `Deploy`.
+## Data integrity note
 
-### No-CLI Note
+All displayed values use documented thesis data in `src/data/researchData.js`.
+No fabricated learners, no modified ALNAT scores, and no added absent learners are introduced.
 
-The Vercel CLI is optional and not required for this project. The dashboard flow above is enough.
-
-### Post-Deploy Checklist
-
-1. Confirm hero, chart, and filter interactions load correctly.
-2. Confirm table filtering works for `Learner Search` and `Posttest Rating`.
-3. Check mobile behavior on at least one phone-size viewport.
-4. Enable a custom domain in Vercel if needed.
-
-### Defense and Release Checklist
-
-Use the complete checklist with exact screenshot requirements here:
+## Defense and release checklist
 
 - [THESIS_RELEASE_CHECKLIST.md](THESIS_RELEASE_CHECKLIST.md)
-
-## Technical approach
-
-- **Animation engine**: GSAP timelines for deterministic choreography.
-- **Scroll orchestration**: ScrollTrigger `scrub` and `pin` for direct user-controlled motion.
-- **Performance**:
-  - Transform and opacity-focused animation paths.
-  - `invalidateOnRefresh` for responsive recalculation.
-  - Passive scroll listeners for progress UI updates.
-- **Accessibility**:
-  - `prefers-reduced-motion` disables high-intensity animations.
-  - Skip link and visible focus-ready controls.
-
-## Extension ideas
-
-- Add Three.js particle layers behind the hero and sync camera depth to scroll progress.
-- Introduce velocity-aware motion blur for high-speed scroll bursts.
-- Use CMS-driven chapter data to generate dynamic scroll narratives.
-- Add audio-reactive layers with explicit user consent and mute controls.

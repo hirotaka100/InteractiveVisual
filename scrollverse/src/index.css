@@ -1,0 +1,74 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Syne:wght@600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply m-0 min-h-screen overflow-x-hidden bg-deep text-ink font-body antialiased;
+  background-image:
+    radial-gradient(circle at 12% 12%, rgba(35, 215, 186, 0.22), transparent 34%),
+    radial-gradient(circle at 80% 8%, rgba(255, 186, 82, 0.2), transparent 31%),
+    radial-gradient(circle at 85% 58%, rgba(126, 198, 255, 0.16), transparent 36%),
+    linear-gradient(180deg, #03080d 0%, #07111a 45%, #102131 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.13;
+  z-index: 1;
+  background-image: radial-gradient(circle at 1px 1px, #ffffff 0.85px, transparent 0.85px);
+  background-size: 3px 3px;
+}
+
+.glass-panel {
+  @apply border border-white/15 bg-panel/70 backdrop-blur-md shadow-soft;
+}
+
+.chapter-shell {
+  @apply relative mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 lg:px-8;
+}
+
+.section-title {
+  @apply font-display text-3xl leading-tight sm:text-4xl lg:text-5xl;
+}
+
+.section-copy {
+  @apply mt-3 max-w-3xl text-sm leading-relaxed text-muted sm:text-base;
+}
+
+.pill-btn {
+  @apply rounded-full border border-white/20 bg-white/5 px-3 py-2 text-xs font-medium text-ink transition duration-200 hover:-translate-y-0.5 hover:bg-white/10;
+}
+
+.pill-btn-active {
+  @apply border-aqua/70 bg-aqua/20;
+}
+
+.table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
