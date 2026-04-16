@@ -118,7 +118,7 @@
             <label class="control" for="sectionViewFilter">
               <span>Section Filter</span>
               <select id="sectionViewFilter">
-                <option value="all">All Sections (56)</option>
+                <option value="all">All Learners (Aggregate 56)</option>
                 <option value="Honest">Grade 3-Honest (25)</option>
                 <option value="Patience">Grade 3-Patience (31)</option>
               </select>
@@ -135,11 +135,19 @@
             <label class="control" for="evaluatorRoleFilter">
               <span>Evaluator Role Filter</span>
               <select id="evaluatorRoleFilter">
-                <option value="all">Teachers + IT Expert</option>
-                <option value="teachers">Teachers + Master Teacher</option>
+                <option value="teachers" selected>Teachers + Master Teacher</option>
                 <option value="it">IT Expert</option>
+                <option value="all">Teachers + IT Expert (Compare)</option>
               </select>
             </label>
+
+            <div class="control">
+              <span>View Mode</span>
+              <div class="pill-group" id="frameworkCompareMode" role="group" aria-label="Framework comparison mode">
+                <button class="pill-btn is-active" type="button" data-framework-mode="focus">Focus</button>
+                <button class="pill-btn" type="button" data-framework-mode="compare">Compare</button>
+              </div>
+            </div>
           </div>
 
           <div class="framework-kpis reveal" id="frameworkKpis">

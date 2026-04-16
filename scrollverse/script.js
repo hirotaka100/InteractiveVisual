@@ -16,6 +16,7 @@ const filterStatus = document.getElementById("filterStatus");
 const sectionViewFilter = document.getElementById("sectionViewFilter");
 const phaseToggleRoot = document.getElementById("phaseToggle");
 const evaluatorRoleFilter = document.getElementById("evaluatorRoleFilter");
+const frameworkCompareRoot = document.getElementById("frameworkCompareMode");
 const kpiLearnerCount = document.getElementById("kpiLearnerCount");
 const kpiMeanScore = document.getElementById("kpiMeanScore");
 const kpiWeightedMean = document.getElementById("kpiWeightedMean");
@@ -265,7 +266,8 @@ const ratingOrder = [
 const frameworkState = {
   section: "all",
   phase: "post",
-  evaluatorRole: "all"
+  evaluatorRole: "teachers",
+  compareMode: "focus"
 };
 
 const evaluatorProfiles = {
@@ -571,6 +573,20 @@ function getSectionPairs(section) {
   return learnerPairs.filter((row) => row.section === section);
 }
 
+function getPairsBySectionKey(key) {
+  if (key === "all") {
+    return learnerPairs;
+  }
+  return getSectionPairs(key);
+}
+
+function sectionLabelFromKey(key) {
+  if (key === "all") {
+    return "All Learners";
+  }
+  return `Grade 3-${key}`;
+}
+
 function averageScore(pairs, phase) {
   if (!pairs.length) {
     return 0;
@@ -680,51 +696,60 @@ function renderHistogram() {
   const plotHeight = height - margin.top - margin.bottom;
   const phase = frameworkState.phase;
   const opposite = getOppositePhase(phase);
-  const sections = frameworkState.section === "all" ? ["Honest", "Patience"] : [frameworkState.section];
+  const compareOn = frameworkState.compareMode === "compare";
+  const sectionKeys = compareOn && frameworkState.section === "all"
+    ? ["Honest", "Patience"]
+    : [frameworkState.section];
 
-  const currentSeries = sections.map((section) => ({
-    section,
-    counts: getCountsByRating(getSectionPairs(section), phase)
+  const currentSeries = sectionKeys.map((key) => ({
+    key,
+    counts: getCountsByRating(getPairsBySectionKey(key), phase)
   }));
 
-  const overlaySeries = sections.map((section) => ({
-    section,
-    counts: getCountsByRating(getSectionPairs(section), opposite)
+  const overlaySeries = sectionKeys.map((key) => ({
+    key,
+    counts: getCountsByRating(getPairsBySectionKey(key), opposite)
   }));
 
   const maxCount = Math.max(
     1,
     ...currentSeries.flatMap((entry) => entry.counts.map((item) => item.count)),
-    ...overlaySeries.flatMap((entry) => entry.counts.map((item) => item.count))
+    ...(compareOn ? overlaySeries.flatMap((entry) => entry.counts.map((item) => item.count)) : [])
   );
 
   const yForCount = (count) => margin.top + plotHeight - ((count / maxCount) * plotHeight);
   const groupWidth = plotWidth / ratingOrder.length;
-  const barWidth = sections.length === 2 ? groupWidth * 0.26 : groupWidth * 0.42;
+  const barWidth = sectionKeys.length === 2 ? groupWidth * 0.26 : groupWidth * 0.42;
 
   const bars = ratingOrder
     .map((label, levelIndex) => {
       const baseX = margin.left + (levelIndex * groupWidth);
-      return sections
-        .map((section, sectionIndex) => {
+      return sectionKeys
+        .map((key, sectionIndex) => {
           const currentCount = currentSeries
-            .find((entry) => entry.section === section)
+            .find((entry) => entry.key === key)
             .counts[levelIndex].count;
           const overlayCount = overlaySeries
-            .find((entry) => entry.section === section)
+            .find((entry) => entry.key === key)
             .counts[levelIndex].count;
 
-          const spacing = sections.length === 2 ? groupWidth * 0.13 : groupWidth * 0.29;
+          const spacing = sectionKeys.length === 2 ? groupWidth * 0.13 : groupWidth * 0.29;
           const x = baseX + spacing + (sectionIndex * (barWidth + groupWidth * 0.08));
           const yCurrent = yForCount(currentCount);
           const hCurrent = margin.top + plotHeight - yCurrent;
           const yOverlay = yForCount(overlayCount);
           const hOverlay = margin.top + plotHeight - yOverlay;
-          const colorClass = section === "Honest" ? "hist-bar--honest" : "hist-bar--patience";
+          let colorClass = "hist-bar--all";
+          if (key === "Honest") {
+            colorClass = "hist-bar--honest";
+          }
+          if (key === "Patience") {
+            colorClass = "hist-bar--patience";
+          }
 
           return `
             <rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hCurrent}" class="${colorClass}" />
-            <rect x="${x + 1}" y="${yOverlay}" width="${Math.max(barWidth - 2, 2)}" height="${hOverlay}" class="hist-overlay" />
+            ${compareOn ? `<rect x="${x + 1}" y="${yOverlay}" width="${Math.max(barWidth - 2, 2)}" height="${hOverlay}" class="hist-overlay" />` : ""}
             <text x="${x + (barWidth / 2)}" y="${yCurrent - 6}" text-anchor="middle" class="chart-label">${currentCount}</text>
           `;
         })
@@ -750,7 +775,7 @@ function renderHistogram() {
     .join("");
 
   const legendY = height - 52;
-  const legendItems = frameworkState.section === "all"
+  const legendItems = compareOn && frameworkState.section === "all"
     ? `
       <rect x="${margin.left}" y="${legendY - 10}" width="12" height="12" class="hist-bar--honest" />
       <text x="${margin.left + 18}" y="${legendY}" class="chart-label">Honest (${phase})</text>
@@ -760,10 +785,10 @@ function renderHistogram() {
       <text x="${margin.left + 352}" y="${legendY}" class="chart-label">${opposite} overlay</text>
     `
     : `
-      <rect x="${margin.left}" y="${legendY - 10}" width="12" height="12" class="${frameworkState.section === "Honest" ? "hist-bar--honest" : "hist-bar--patience"}" />
-      <text x="${margin.left + 18}" y="${legendY}" class="chart-label">${frameworkState.section} (${phase})</text>
-      <line x1="${margin.left + 188}" y1="${legendY - 4}" x2="${margin.left + 204}" y2="${legendY - 4}" class="hist-overlay" />
-      <text x="${margin.left + 212}" y="${legendY}" class="chart-label">${opposite} overlay</text>
+      <rect x="${margin.left}" y="${legendY - 10}" width="12" height="12" class="${frameworkState.section === "Honest" ? "hist-bar--honest" : frameworkState.section === "Patience" ? "hist-bar--patience" : "hist-bar--all"}" />
+      <text x="${margin.left + 18}" y="${legendY}" class="chart-label">${sectionLabelFromKey(frameworkState.section)} (${phase})</text>
+      ${compareOn ? `<line x1="${margin.left + 230}" y1="${legendY - 4}" x2="${margin.left + 246}" y2="${legendY - 4}" class="hist-overlay" />` : ""}
+      ${compareOn ? `<text x="${margin.left + 254}" y="${legendY}" class="chart-label">${opposite} overlay</text>` : ""}
     `;
 
   histogramShell.innerHTML = `
@@ -777,17 +802,21 @@ function renderHistogram() {
   `;
 
   if (histogramNote) {
-    if (frameworkState.section === "all") {
+    if (compareOn && frameworkState.section === "all") {
       const honestMean = averageScore(getSectionPairs("Honest"), phase);
       const patienceMean = averageScore(getSectionPairs("Patience"), phase);
       histogramNote.textContent = `${phase === "pre" ? "Pre-test" : "Post-test"} section means: Honest ${honestMean.toFixed(2)} vs Patience ${patienceMean.toFixed(2)} (out of 40).`;
     } else {
-      const sectionPairs = getSectionPairs(frameworkState.section);
+      const sectionPairs = getPairsBySectionKey(frameworkState.section);
       const meanCurrent = averageScore(sectionPairs, phase);
-      const meanOther = averageScore(sectionPairs, opposite);
-      const delta = meanCurrent - meanOther;
-      const signed = `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`;
-      histogramNote.textContent = `${frameworkState.section}: ${phase} mean ${meanCurrent.toFixed(2)} vs ${opposite} mean ${meanOther.toFixed(2)} (delta ${signed}).`;
+      if (compareOn) {
+        const meanOther = averageScore(sectionPairs, opposite);
+        const delta = meanCurrent - meanOther;
+        const signed = `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`;
+        histogramNote.textContent = `${sectionLabelFromKey(frameworkState.section)}: ${phase} mean ${meanCurrent.toFixed(2)} vs ${opposite} mean ${meanOther.toFixed(2)} (delta ${signed}).`;
+      } else {
+        histogramNote.textContent = `${sectionLabelFromKey(frameworkState.section)}: ${phase} mean ${meanCurrent.toFixed(2)} (out of 40).`;
+      }
     }
   }
 }
@@ -865,7 +894,7 @@ function renderRadarPanels() {
     return;
   }
 
-  let keys = ["teachers", "it"];
+  let keys = frameworkState.compareMode === "compare" ? ["teachers", "it"] : ["teachers"];
   if (frameworkState.evaluatorRole === "teachers") {
     keys = ["teachers"];
   }
@@ -887,6 +916,7 @@ function renderFrameworkDashboard() {
 
 function setupFrameworkControls() {
   updatePillSelection(phaseToggleRoot, "data-phase", frameworkState.phase);
+  updatePillSelection(frameworkCompareRoot, "data-framework-mode", frameworkState.compareMode);
 
   sectionViewFilter?.addEventListener("change", () => {
     frameworkState.section = sectionViewFilter.value;
@@ -895,6 +925,29 @@ function setupFrameworkControls() {
 
   evaluatorRoleFilter?.addEventListener("change", () => {
     frameworkState.evaluatorRole = evaluatorRoleFilter.value;
+    renderFrameworkDashboard();
+  });
+
+  frameworkCompareRoot?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const nextMode = target.getAttribute("data-framework-mode");
+    if (!nextMode || nextMode === frameworkState.compareMode) {
+      return;
+    }
+
+    frameworkState.compareMode = nextMode;
+    updatePillSelection(frameworkCompareRoot, "data-framework-mode", frameworkState.compareMode);
+
+    if (frameworkState.compareMode === "focus" && frameworkState.evaluatorRole === "all") {
+      frameworkState.evaluatorRole = "teachers";
+      if (evaluatorRoleFilter) {
+        evaluatorRoleFilter.value = "teachers";
+      }
+    }
+
     renderFrameworkDashboard();
   });
 
