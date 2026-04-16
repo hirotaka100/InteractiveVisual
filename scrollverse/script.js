@@ -13,6 +13,9 @@ const learnerSearch = document.getElementById("learnerSearch");
 const ratingFilter = document.getElementById("ratingFilter");
 const clearFilters = document.getElementById("clearFilters");
 const filterStatus = document.getElementById("filterStatus");
+const sourceModeRoot = document.getElementById("sourceMode");
+const metricModeRoot = document.getElementById("metricMode");
+const comparisonInsight = document.getElementById("comparisonInsight");
 
 const pretestRowsRaw = [
   "L1|12|30.00|Needs Major Support",
@@ -235,6 +238,11 @@ const learnerPairs = researchData.pretestLearners
   .filter((row) => row.post !== null)
   .sort((a, b) => a.number - b.number);
 
+const comparisonState = {
+  sourceMode: "pre-post4",
+  metricMode: "count"
+};
+
 function ratioWidth(count, total) {
   if (!total) {
     return 0;
@@ -252,6 +260,127 @@ function createShiftBar(tag, modifierClass, count, percentText) {
       <span class="shift-value">${count} (${percentText})</span>
     </div>
   `;
+}
+
+function createComparisonBar(tag, modifierClass, width, valueText) {
+  return `
+    <div class="shift-bar">
+      <span class="shift-tag">${tag}</span>
+      <div class="shift-track">
+        <span class="shift-fill ${modifierClass}" data-width="${Math.max(0, Math.min(width, 100)).toFixed(2)}"></span>
+      </div>
+      <span class="shift-value">${valueText}</span>
+    </div>
+  `;
+}
+
+function getComparisonSeries() {
+  if (comparisonState.sourceMode === "pre-post5") {
+    return {
+      seriesAName: "Pre",
+      seriesA: researchData.pretest,
+      seriesBName: "Post Ch5",
+      seriesB: researchData.posttestChapter5Summary
+    };
+  }
+
+  if (comparisonState.sourceMode === "post4-post5") {
+    return {
+      seriesAName: "Post Ch4",
+      seriesA: researchData.posttestChapter4,
+      seriesBName: "Post Ch5",
+      seriesB: researchData.posttestChapter5Summary
+    };
+  }
+
+  return {
+    seriesAName: "Pre",
+    seriesA: researchData.pretest,
+    seriesBName: "Post Ch4",
+    seriesB: researchData.posttestChapter4
+  };
+}
+
+function formatValue(row) {
+  if (comparisonState.metricMode === "percent") {
+    return `${row.percent.toFixed(2)}% (${row.count})`;
+  }
+  return `${row.count} (${row.percent.toFixed(2)}%)`;
+}
+
+function getWidthValue(row) {
+  if (comparisonState.metricMode === "percent") {
+    return row.percent;
+  }
+  return ratioWidth(row.count, researchData.totalLearners);
+}
+
+function renderComparisonInsight(categoryOrder, aMap, bMap, seriesAName, seriesBName) {
+  if (!comparisonInsight) {
+    return;
+  }
+
+  const deltas = categoryOrder.map((label) => {
+    const rowA = aMap.get(label) || { count: 0, percent: 0 };
+    const rowB = bMap.get(label) || { count: 0, percent: 0 };
+    const delta = comparisonState.metricMode === "percent"
+      ? rowB.percent - rowA.percent
+      : rowB.count - rowA.count;
+    return { label, delta };
+  });
+
+  const maxUp = deltas.reduce((prev, curr) => (curr.delta > prev.delta ? curr : prev), deltas[0]);
+  const maxDown = deltas.reduce((prev, curr) => (curr.delta < prev.delta ? curr : prev), deltas[0]);
+  const unit = comparisonState.metricMode === "percent" ? "pp" : "learners";
+  const formatDelta = (value) => (
+    comparisonState.metricMode === "percent"
+      ? value.toFixed(2)
+      : String(Math.round(value))
+  );
+
+  const upText = `${maxUp.delta >= 0 ? "+" : ""}${formatDelta(maxUp.delta)}`;
+  const downText = `${maxDown.delta >= 0 ? "+" : ""}${formatDelta(maxDown.delta)}`;
+
+  comparisonInsight.innerHTML = `
+    <strong>${seriesAName}</strong> to <strong>${seriesBName}</strong>: largest increase is
+    <strong>${maxUp.label}</strong> (${upText} ${unit}); largest decrease is
+    <strong>${maxDown.label}</strong> (${downText} ${unit}).
+  `;
+}
+
+function paintComparisonBars() {
+  const bars = document.querySelectorAll("#shiftChart .shift-fill");
+  if (!bars.length) {
+    return;
+  }
+
+  if (reducedMotion || lowEndDevice) {
+    bars.forEach((bar) => {
+      bar.style.width = `${bar.dataset.width || 0}%`;
+    });
+    return;
+  }
+
+  gsap.fromTo(
+    bars,
+    { width: "0%" },
+    {
+      width: (index, target) => `${target.dataset.width || 0}%`,
+      duration: 0.58,
+      ease: "power2.out",
+      stagger: 0.02
+    }
+  );
+}
+
+function updatePillSelection(root, dataAttr, value) {
+  if (!root) {
+    return;
+  }
+
+  root.querySelectorAll(".pill-btn").forEach((btn) => {
+    btn.classList.toggle("is-active", btn.getAttribute(dataAttr) === value);
+  });
 }
 
 function renderBaseline() {
@@ -293,23 +422,24 @@ function renderDistributionComparison() {
     "Transforming"
   ];
 
-  const preMap = new Map(researchData.pretest.map((row) => [row.label, row]));
-  const chapter4Map = new Map(researchData.posttestChapter4.map((row) => [row.label, row]));
-  const chapter5Map = new Map(researchData.posttestChapter5Summary.map((row) => [row.label, row]));
+  const { seriesAName, seriesA, seriesBName, seriesB } = getComparisonSeries();
+
+  const seriesAMap = new Map(seriesA.map((row) => [row.label, row]));
+  const seriesBMap = new Map(seriesB.map((row) => [row.label, row]));
 
   shiftChart.innerHTML = categoryOrder
     .map((label) => {
-      const pre = preMap.get(label) || { count: 0, percent: 0 };
-      const chapter4 = chapter4Map.get(label) || { count: 0, percent: 0 };
-      const chapter5 = chapter5Map.get(label) || { count: 0, percent: 0 };
+      const rowA = seriesAMap.get(label) || { count: 0, percent: 0 };
+      const rowB = seriesBMap.get(label) || { count: 0, percent: 0 };
+      const widthA = getWidthValue(rowA);
+      const widthB = getWidthValue(rowB);
 
       return `
         <div class="shift-row">
           <span class="shift-label">${label}</span>
           <div class="shift-bars">
-            ${createShiftBar("Pre", "shift-fill--pre", pre.count, `${pre.percent.toFixed(2)}%`)}
-            ${createShiftBar("Post Ch4", "shift-fill--post", chapter4.count, `${chapter4.percent.toFixed(2)}%`)}
-            ${createShiftBar("Post Ch5", "shift-fill--summary", chapter5.count, `${chapter5.percent.toFixed(2)}%`)}
+            ${createComparisonBar(seriesAName, "shift-fill--a", widthA, formatValue(rowA))}
+            ${createComparisonBar(seriesBName, "shift-fill--b", widthB, formatValue(rowB))}
           </div>
         </div>
       `;
@@ -324,9 +454,42 @@ function renderDistributionComparison() {
     .map((row) => `<li><span>${row.label}</span><strong>${row.count} (${row.percent.toFixed(2)}%)</strong></li>`)
     .join("");
 
-  document.querySelectorAll("#shiftChart .shift-fill, #baselineBars .shift-fill").forEach((el) => {
-    const count = Number(el.dataset.width || 0);
-    el.dataset.width = ratioWidth(count, researchData.totalLearners).toFixed(2);
+  renderComparisonInsight(categoryOrder, seriesAMap, seriesBMap, seriesAName, seriesBName);
+  paintComparisonBars();
+}
+
+function setupComparisonControls() {
+  updatePillSelection(sourceModeRoot, "data-source-mode", comparisonState.sourceMode);
+  updatePillSelection(metricModeRoot, "data-metric-mode", comparisonState.metricMode);
+
+  sourceModeRoot?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const nextMode = target.getAttribute("data-source-mode");
+    if (!nextMode || nextMode === comparisonState.sourceMode) {
+      return;
+    }
+
+    comparisonState.sourceMode = nextMode;
+    updatePillSelection(sourceModeRoot, "data-source-mode", comparisonState.sourceMode);
+    renderDistributionComparison();
+  });
+
+  metricModeRoot?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const nextMode = target.getAttribute("data-metric-mode");
+    if (!nextMode || nextMode === comparisonState.metricMode) {
+      return;
+    }
+
+    comparisonState.metricMode = nextMode;
+    updatePillSelection(metricModeRoot, "data-metric-mode", comparisonState.metricMode);
+    renderDistributionComparison();
   });
 }
 
@@ -631,6 +794,7 @@ function setupAnimations() {
 
 renderBaseline();
 renderDistributionComparison();
+setupComparisonControls();
 renderStats();
 renderScoreRows("qualityBars", researchData.qualityScores);
 renderScoreRows("itBars", researchData.itExpertScores);

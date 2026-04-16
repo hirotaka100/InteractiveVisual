@@ -170,6 +170,21 @@
             Chapter 5 summary values to show movement and reporting differences.
           </p>
 
+          <div class="comparison-controls reveal">
+            <div class="pill-group" id="sourceMode" role="group" aria-label="Comparison source mode">
+              <button class="pill-btn is-active" data-source-mode="pre-post4" type="button">Pre vs Ch4</button>
+              <button class="pill-btn" data-source-mode="pre-post5" type="button">Pre vs Ch5</button>
+              <button class="pill-btn" data-source-mode="post4-post5" type="button">Ch4 vs Ch5</button>
+            </div>
+
+            <div class="pill-group" id="metricMode" role="group" aria-label="Comparison metric mode">
+              <button class="pill-btn is-active" data-metric-mode="count" type="button">Count</button>
+              <button class="pill-btn" data-metric-mode="percent" type="button">Percent</button>
+            </div>
+          </div>
+
+          <div class="comparison-insight reveal" id="comparisonInsight"></div>
+
           <div class="bar-panel reveal" id="shiftChart" aria-label="Distribution shift chart"></div>
 
           <div class="comparison-grid reveal">
