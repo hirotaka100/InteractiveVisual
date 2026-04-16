@@ -583,11 +583,16 @@ export default function App() {
     return { avgPre, avgPost, meanGain };
   }, [filteredLearners]);
 
+  const chapterStateClass = (chapterId) => (activeChapter === chapterId ? "story-chapter-active" : "");
+
   return (
-    <div className="relative min-h-screen">
+    <div className="story-root relative min-h-screen">
       <div className="app-grain" aria-hidden="true" />
 
-      <header id="chapter-hero" className="relative z-10 flex min-h-[92vh] items-center px-4 pb-16 pt-20 sm:px-6 lg:px-8">
+      <header
+        id="chapter-hero"
+        className={`story-chapter story-hero relative z-10 flex min-h-[92vh] items-center px-4 pb-16 pt-20 sm:px-6 lg:px-8 ${chapterStateClass("chapter-hero")}`}
+      >
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -693,8 +698,8 @@ export default function App() {
         </div>
       </div>
 
-      <main className="relative z-10 pb-20">
-        <section id="chapter-method" className="chapter-shell">
+      <main className="story-main relative z-10 pb-20">
+        <section id="chapter-method" className={`chapter-shell story-chapter ${chapterStateClass("chapter-method")}`}>
           <Reveal>
             <h2 className="section-title">Chapter 3: Methodology Snapshot</h2>
             <p className="section-copy">
@@ -720,7 +725,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="chapter-framework" className="chapter-shell">
+        <section id="chapter-framework" className={`chapter-shell story-chapter ${chapterStateClass("chapter-framework")}`}>
           <Reveal>
             <h2 className="section-title">Computational Visualization and Performance Analytics Framework</h2>
             <p className="section-copy">
@@ -999,7 +1004,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="chapter-baseline" className="chapter-shell">
+        <section id="chapter-baseline" className={`chapter-shell story-chapter ${chapterStateClass("chapter-baseline")}`}>
           <Reveal>
             <h2 className="section-title">Chapter 4 Baseline: ALNAT Pretest</h2>
             <p className="section-copy">
@@ -1027,7 +1032,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="chapter-intervention" className="chapter-shell">
+        <section id="chapter-intervention" className={`chapter-shell story-chapter ${chapterStateClass("chapter-intervention")}`}>
           <Reveal>
             <h2 className="section-title">Intervention Design: PowerMathSaya 01-04</h2>
             <p className="section-copy">
@@ -1060,7 +1065,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="chapter-comparison" className="chapter-shell">
+        <section id="chapter-comparison" className={`chapter-shell story-chapter ${chapterStateClass("chapter-comparison")}`}>
           <Reveal>
             <h2 className="section-title">Comparison: Pretest Vs Posttest</h2>
             <p className="section-copy">
@@ -1187,7 +1192,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="chapter-stats" className="chapter-shell">
+        <section id="chapter-stats" className={`chapter-shell story-chapter ${chapterStateClass("chapter-stats")}`}>
           <Reveal>
             <h2 className="section-title">Statistical Evidence Of Improvement</h2>
             <p className="section-copy">
@@ -1214,7 +1219,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="chapter-quality" className="chapter-shell">
+        <section id="chapter-quality" className={`chapter-shell story-chapter ${chapterStateClass("chapter-quality")}`}>
           <Reveal>
             <h2 className="section-title">Evaluation Results And Quality Scores</h2>
             <p className="section-copy">
@@ -1276,7 +1281,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="chapter-recommendations" className="chapter-shell">
+        <section id="chapter-recommendations" className={`chapter-shell story-chapter ${chapterStateClass("chapter-recommendations")}`}>
           <Reveal>
             <h2 className="section-title">Evaluator Recommendations</h2>
             <p className="section-copy">
@@ -1305,7 +1310,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="chapter-learner-data" className="chapter-shell">
+        <section id="chapter-learner-data" className={`chapter-shell story-chapter story-chapter-long ${chapterStateClass("chapter-learner-data")}`}>
           <Reveal>
             <h2 className="section-title">Per-Learner Data Tables</h2>
             <p className="section-copy">
@@ -1450,7 +1455,7 @@ export default function App() {
           </Reveal>
         </section>
 
-        <section id="chapter-conclusion" className="chapter-shell">
+        <section id="chapter-conclusion" className={`chapter-shell story-chapter ${chapterStateClass("chapter-conclusion")}`}>
           <Reveal>
             <div className="glass-panel rounded-2xl p-8 text-center">
               <h2 className="section-title">Conclusion</h2>
