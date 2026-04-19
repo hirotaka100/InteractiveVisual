@@ -1,0 +1,16 @@
+# OS
+Thumbs.db
+
+# Vercel local state
+.vercel/
+
+# Editors
+.vscode/
+
+# Env
+.env
+.env.*
+
+# Node / Vite
+node_modules/
+dist/
