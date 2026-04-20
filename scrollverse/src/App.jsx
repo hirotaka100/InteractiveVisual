@@ -377,6 +377,55 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (reducedMotion) {
+      return undefined;
+    }
+
+    const hero = document.getElementById("chapter-hero");
+    if (hero) {
+      hero.style.setProperty("--hero-mx", "50%");
+      hero.style.setProperty("--hero-my", "42%");
+    }
+
+    const handlePointerMove = (event) => {
+      if (event.pointerType === "touch") {
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const button = target.closest("button");
+      if (button) {
+        const buttonRect = button.getBoundingClientRect();
+        button.style.setProperty("--btn-x", `${event.clientX - buttonRect.left}px`);
+        button.style.setProperty("--btn-y", `${event.clientY - buttonRect.top}px`);
+      }
+
+      if (!hero) {
+        return;
+      }
+
+      const heroRect = hero.getBoundingClientRect();
+      const pointerX = event.clientX - heroRect.left;
+      const pointerY = event.clientY - heroRect.top;
+
+      if (pointerX >= 0 && pointerY >= 0 && pointerX <= heroRect.width && pointerY <= heroRect.height) {
+        hero.style.setProperty("--hero-mx", `${pointerX}px`);
+        hero.style.setProperty("--hero-my", `${pointerY}px`);
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+    };
+  }, [reducedMotion]);
+
+  useEffect(() => {
     setHoveredSlopeLearner(null);
   }, [frameworkChart, frameworkSection, frameworkPhase, frameworkReplay]);
 
@@ -687,10 +736,10 @@ export default function App() {
 
       <header
         id="chapter-hero"
-        className={`story-chapter relative z-10 px-4 pb-14 pt-16 sm:px-6 lg:px-8 ${chapterClass("chapter-hero")}`}
+        className={`landing-hero story-chapter relative z-10 px-4 pb-14 pt-16 sm:px-6 lg:px-8 ${chapterClass("chapter-hero")}`}
       >
         <Reveal reducedMotion={reducedMotion}>
-          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+          <div className="hero-grid mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-aqua">PowerMathSaya Research Story</p>
               <h1 className="mt-4 max-w-5xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">
@@ -728,7 +777,7 @@ export default function App() {
               </div>
             </div>
 
-            <aside className="panel-glass rounded-3xl p-5 sm:p-6">
+            <aside className="hero-snapshot panel-glass rounded-3xl p-5 sm:p-6">
               <h2 className="text-base font-semibold text-ink">Research Snapshot</h2>
               <p className="mt-2 text-sm text-muted">Quick defense-ready values before diving into charts.</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
