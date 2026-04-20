@@ -304,6 +304,7 @@ export default function App() {
   const [frameworkRole, setFrameworkRole] = useState("teachers");
   const [frameworkChart, setFrameworkChart] = useState("slope");
   const [frameworkReplay, setFrameworkReplay] = useState(0);
+  const [hoveredSlopeLearner, setHoveredSlopeLearner] = useState(null);
 
   const [comparisonSource, setComparisonSource] = useState("pre-post4");
   const [comparisonMetric, setComparisonMetric] = useState("count");
@@ -375,6 +376,10 @@ export default function App() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    setHoveredSlopeLearner(null);
+  }, [frameworkChart, frameworkSection, frameworkPhase, frameworkReplay]);
+
   const frameworkPairs = useMemo(() => pairsBySection(frameworkSection), [frameworkSection]);
 
   const frameworkKpis = useMemo(() => {
@@ -425,8 +430,15 @@ export default function App() {
 
       return {
         learner: pair.learner,
+        section: pair.section,
         preY,
         postY,
+        preScore: pair.pre.score,
+        postScore: pair.post.score,
+        prePercent: pair.pre.percent,
+        postPercent: pair.post.percent,
+        preRating: pair.pre.rating,
+        postRating: pair.post.rating,
         delta,
         stroke: delta < 0 ? "rgba(213,109,95,0.65)" : "rgba(47,158,154,0.62)"
       };
@@ -878,10 +890,45 @@ export default function App() {
                   >
                     <h3 className="text-base font-semibold text-ink">Paired Slopegraph: Pre-test To Post-test</h3>
                     <p className="mt-1 text-sm text-muted">
-                      Each line is one learner trajectory; green lines indicate gains while coral lines indicate decline.
+                      Each line is one learner trajectory; green lines indicate gains while coral lines indicate decline. Hover any line or dot to inspect learner details.
                     </p>
 
-                    <div className="mt-3 overflow-hidden rounded-xl border border-ink/12 bg-white/92">
+                    <div className="relative mt-3 overflow-hidden rounded-xl border border-ink/12 bg-white/92">
+                      <AnimatePresence>
+                        {hoveredSlopeLearner ? (
+                          <motion.div
+                            className="pointer-events-none absolute right-3 top-3 z-20 w-[230px] rounded-xl border border-aqua/35 bg-white/95 p-3 shadow-soft backdrop-blur"
+                            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                            transition={{ duration: 0.18, ease: easeOut }}
+                          >
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted">Learner Focus</p>
+                            <p className="mono-numeric mt-1 text-sm font-semibold text-ink">
+                              {hoveredSlopeLearner.learner} | Grade 3-{hoveredSlopeLearner.section}
+                            </p>
+
+                            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                              <div className="rounded-lg border border-ink/12 bg-[#f8fbff] p-2">
+                                <p className="font-semibold uppercase tracking-[0.06em] text-muted">Pre</p>
+                                <p className="mono-numeric mt-1 text-ink">{hoveredSlopeLearner.preScore} / 40</p>
+                                <p className="mono-numeric text-muted">{hoveredSlopeLearner.prePercent.toFixed(2)}%</p>
+                              </div>
+                              <div className="rounded-lg border border-ink/12 bg-[#f8fbff] p-2">
+                                <p className="font-semibold uppercase tracking-[0.06em] text-muted">Post</p>
+                                <p className="mono-numeric mt-1 text-ink">{hoveredSlopeLearner.postScore} / 40</p>
+                                <p className="mono-numeric text-muted">{hoveredSlopeLearner.postPercent.toFixed(2)}%</p>
+                              </div>
+                            </div>
+
+                            <p className={`mono-numeric mt-2 text-xs font-semibold ${hoveredSlopeLearner.delta >= 0 ? "text-aqua" : "text-coral"}`}>
+                              Delta: {signed(hoveredSlopeLearner.delta, 0)} points
+                            </p>
+                            <p className="mt-1 text-[11px] text-muted">{hoveredSlopeLearner.preRating} to {hoveredSlopeLearner.postRating}</p>
+                          </motion.div>
+                        ) : null}
+                      </AnimatePresence>
+
                       <svg viewBox={`0 0 ${slopeGraph.width} ${slopeGraph.height}`} className="h-auto w-full" aria-hidden="true">
                         {slopeGraph.ticks.map((tick) => {
                           const y = slopeGraph.toY(tick);
@@ -923,23 +970,73 @@ export default function App() {
                           Post-test
                         </text>
 
-                        {slopeGraph.lines.map((line, index) => (
-                          <g key={line.learner}>
-                            <motion.line
-                              x1={slopeGraph.xPre}
-                              y1={line.preY}
-                              x2={slopeGraph.xPost}
-                              y2={line.postY}
-                              stroke={line.stroke}
-                              strokeWidth="2"
-                              initial={{ pathLength: 0, opacity: 0.2 }}
-                              animate={{ pathLength: 1, opacity: 1 }}
-                              transition={{ duration: 0.52, delay: Math.min(index * 0.008, 0.42), ease: easeOut }}
-                            />
-                            <circle cx={slopeGraph.xPre} cy={line.preY} r={frameworkPhase === "pre" ? 3.3 : 2.3} fill={frameworkPhase === "pre" ? "#c8872f" : "#8ea2b6"} />
-                            <circle cx={slopeGraph.xPost} cy={line.postY} r={frameworkPhase === "post" ? 3.3 : 2.3} fill={frameworkPhase === "post" ? "#2f9e9a" : "#8ea2b6"} />
-                          </g>
-                        ))}
+                        {slopeGraph.lines.map((line, index) => {
+                          const active = hoveredSlopeLearner?.learner === line.learner;
+                          const muted = hoveredSlopeLearner && !active;
+                          const tooltip = `${line.learner} | Grade 3-${line.section}\nPre: ${line.preScore}/40 (${line.prePercent.toFixed(2)}%) ${line.preRating}\nPost: ${line.postScore}/40 (${line.postPercent.toFixed(2)}%) ${line.postRating}\nDelta: ${signed(line.delta, 0)} points`;
+
+                          return (
+                            <g
+                              key={line.learner}
+                              onMouseEnter={() => setHoveredSlopeLearner(line)}
+                              onMouseLeave={() => setHoveredSlopeLearner(null)}
+                            >
+                              <line
+                                x1={slopeGraph.xPre}
+                                y1={line.preY}
+                                x2={slopeGraph.xPost}
+                                y2={line.postY}
+                                stroke="transparent"
+                                strokeWidth="12"
+                                strokeLinecap="round"
+                              />
+
+                              <motion.line
+                                x1={slopeGraph.xPre}
+                                y1={line.preY}
+                                x2={slopeGraph.xPost}
+                                y2={line.postY}
+                                stroke={line.stroke}
+                                strokeLinecap="round"
+                                initial={{ pathLength: 0, opacity: 0.2 }}
+                                animate={{
+                                  pathLength: 1,
+                                  opacity: muted ? 0.2 : 1,
+                                  strokeWidth: active ? 3.4 : 2
+                                }}
+                                transition={{
+                                  pathLength: { duration: 0.52, delay: Math.min(index * 0.008, 0.42), ease: easeOut },
+                                  opacity: { duration: 0.18, ease: "easeOut" },
+                                  strokeWidth: { duration: 0.16, ease: "easeOut" }
+                                }}
+                              >
+                                <title>{tooltip}</title>
+                              </motion.line>
+
+                              <circle
+                                cx={slopeGraph.xPre}
+                                cy={line.preY}
+                                r={active ? 4.5 : frameworkPhase === "pre" ? 3.3 : 2.3}
+                                fill={frameworkPhase === "pre" ? "#c8872f" : "#8ea2b6"}
+                                opacity={muted ? 0.24 : 1}
+                                style={{ transition: "opacity 140ms ease, r 140ms ease" }}
+                              >
+                                <title>{tooltip}</title>
+                              </circle>
+
+                              <circle
+                                cx={slopeGraph.xPost}
+                                cy={line.postY}
+                                r={active ? 4.5 : frameworkPhase === "post" ? 3.3 : 2.3}
+                                fill={frameworkPhase === "post" ? "#2f9e9a" : "#8ea2b6"}
+                                opacity={muted ? 0.24 : 1}
+                                style={{ transition: "opacity 140ms ease, r 140ms ease" }}
+                              >
+                                <title>{tooltip}</title>
+                              </circle>
+                            </g>
+                          );
+                        })}
 
                         <text x={slopeGraph.width / 2} y={slopeGraph.height - 8} textAnchor="middle" className="fill-muted text-[11px]">
                           {sectionLabel(frameworkSection)} | {frameworkPairs.length} paired records
