@@ -91,8 +91,29 @@ body {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(480px circle at var(--hero-mx, 50%) var(--hero-my, 42%), rgba(47, 158, 154, 0.24), rgba(47, 158, 154, 0.05) 44%, transparent 74%),
-    radial-gradient(320px circle at calc(var(--hero-mx, 50%) + 140px) calc(var(--hero-my, 42%) - 120px), rgba(200, 135, 47, 0.12), transparent 72%);
+    radial-gradient(660px circle at var(--hero-mx, 50%) var(--hero-my, 42%), rgba(255, 230, 74, 0.66), rgba(255, 141, 71, 0.44) 18%, rgba(73, 190, 255, 0.4) 42%, rgba(47, 158, 154, 0.16) 62%, transparent 82%),
+    radial-gradient(300px circle at calc(var(--hero-mx, 50%) - 170px) calc(var(--hero-my, 42%) + 110px), rgba(239, 99, 84, 0.34), transparent 74%);
+  filter: saturate(1.2) contrast(1.03);
+}
+
+.landing-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.8;
+  background:
+    radial-gradient(17px circle at calc(var(--hero-mx, 50%) - 118px) calc(var(--hero-my, 42%) - 78px), rgba(255, 96, 125, 0.82), rgba(255, 96, 125, 0) 70%),
+    radial-gradient(15px circle at calc(var(--hero-mx, 50%) + 112px) calc(var(--hero-my, 42%) - 16px), rgba(47, 158, 154, 0.86), rgba(47, 158, 154, 0) 72%),
+    radial-gradient(18px circle at calc(var(--hero-mx, 50%) - 32px) calc(var(--hero-my, 42%) + 116px), rgba(255, 215, 83, 0.9), rgba(255, 215, 83, 0) 74%),
+    radial-gradient(14px circle at calc(var(--hero-mx, 50%) + 168px) calc(var(--hero-my, 42%) + 84px), rgba(66, 171, 255, 0.84), rgba(66, 171, 255, 0) 70%),
+    repeating-linear-gradient(116deg, rgba(255, 255, 255, 0) 0 15px, rgba(255, 255, 255, 0.2) 15px 17px);
+}
+
+.landing-hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-grid {
@@ -126,19 +147,41 @@ button::before {
   inset: -36%;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(130px circle at var(--btn-x, 50%) var(--btn-y, 50%), rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0) 62%);
+  background:
+    radial-gradient(138px circle at var(--btn-x, 50%) var(--btn-y, 50%), rgba(255, 244, 157, 0.88), rgba(255, 244, 157, 0.42) 30%, rgba(255, 244, 157, 0) 64%),
+    radial-gradient(196px circle at var(--btn-x, 50%) var(--btn-y, 50%), rgba(73, 190, 255, 0.36), rgba(73, 190, 255, 0) 74%);
+  opacity: 0;
+  transform: scale(0.78);
+  transition: opacity 0.24s ease, transform 0.28s ease;
+}
+
+button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255, 99, 99, 0.3), rgba(255, 224, 95, 0.32), rgba(73, 190, 255, 0.34));
+  mix-blend-mode: screen;
   opacity: 0;
   transition: opacity 0.24s ease;
 }
 
 button:hover {
-  box-shadow: 0 10px 20px rgba(31, 42, 55, 0.14);
-  filter: saturate(1.06);
+  transform: translateY(-2px) scale(1.018);
+  box-shadow: 0 14px 24px rgba(31, 42, 55, 0.2), 0 0 0 2px rgba(255, 220, 102, 0.28);
+  filter: saturate(1.16) contrast(1.03);
 }
 
 button:hover::before,
 button:focus-visible::before {
   opacity: 1;
+  transform: scale(1);
+}
+
+button:hover::after,
+button:focus-visible::after {
+  opacity: 0.72;
 }
 
 button:focus-visible {
@@ -149,6 +192,7 @@ button:focus-visible {
 button:active {
   transition-duration: 0.1s;
   box-shadow: 0 4px 10px rgba(31, 42, 55, 0.14);
+  transform: translateY(0) scale(0.996);
 }
 
 .chart-shell {
@@ -280,7 +324,9 @@ button:active {
   }
 
   .landing-hero::before,
-  button::before {
+  .landing-hero::after,
+  button::before,
+  button::after {
     display: none;
   }
 
