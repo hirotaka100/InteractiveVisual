@@ -1,18 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { learnerPairs, ratingOrder, researchData } from "./data/researchData";
+
+const TOTAL_SCORE = 40;
 
 const chapters = [
   { id: "chapter-hero", label: "Intro" },
-  { id: "chapter-method", label: "Method" },
   { id: "chapter-framework", label: "Framework" },
-  { id: "chapter-baseline", label: "Baseline" },
-  { id: "chapter-intervention", label: "Intervention" },
   { id: "chapter-comparison", label: "Comparison" },
-  { id: "chapter-stats", label: "Stats" },
-  { id: "chapter-quality", label: "Quality" },
-  { id: "chapter-recommendations", label: "Recommendations" },
-  { id: "chapter-learner-data", label: "Learners" },
+  { id: "chapter-learners", label: "Learners" },
   { id: "chapter-conclusion", label: "Conclusion" }
 ];
 
@@ -22,6 +18,59 @@ const proponents = [
   "Cielo Sentin",
   "Dominic Heinrich Poblete"
 ];
+
+const sectionOptions = [
+  { value: "all", label: "All Learners", count: researchData.totalLearners },
+  { value: "Honest", label: "Grade 3-Honest", count: researchData.sections.Honest },
+  { value: "Patience", label: "Grade 3-Patience", count: researchData.sections.Patience }
+];
+
+const chartOptions = [
+  { value: "slope", label: "Paired Slopegraph" },
+  { value: "histogram", label: "Distribution Histogram" },
+  { value: "radar", label: "Radar Profiles" }
+];
+
+const ratingTone = {
+  "Needs Major Support": { background: "#fde8e7", border: "#f6c5c1", color: "#9c3e37" },
+  Emerging: { background: "#fff1d9", border: "#f3d8a3", color: "#8e5e14" },
+  Anchoring: { background: "#e9f2ff", border: "#c9defc", color: "#305f9f" },
+  Developing: { background: "#e3f8f3", border: "#b6e8da", color: "#1c6f5e" },
+  Transforming: { background: "#ece8ff", border: "#d5c7ff", color: "#4f3a9a" }
+};
+
+const histogramPalette = {
+  "Needs Major Support": {
+    fill: "#e25f50",
+    chip: "#fde8e7"
+  },
+  Emerging: {
+    fill: "#d69b34",
+    chip: "#fff1d9"
+  },
+  Anchoring: {
+    fill: "#4e83d0",
+    chip: "#e9f2ff"
+  },
+  Developing: {
+    fill: "#2b968e",
+    chip: "#e3f8f3"
+  },
+  Transforming: {
+    fill: "#7351cc",
+    chip: "#ece8ff"
+  }
+};
+
+const histogramLabelLines = {
+  "Needs Major Support": ["Needs Major", "Support"],
+  Emerging: ["Emerging"],
+  Anchoring: ["Anchoring"],
+  Developing: ["Developing"],
+  Transforming: ["Transforming"]
+};
+
+const easeOut = [0.16, 1, 0.3, 1];
 
 function ratioWidth(value, max) {
   if (!max) {
@@ -54,6 +103,7 @@ function countsByRating(pairs, phase) {
     const rating = phaseRecord(pair, phase).rating;
     counts.set(rating, (counts.get(rating) || 0) + 1);
   });
+
   return ratingOrder.map((label) => ({
     label,
     count: counts.get(label) || 0
@@ -76,23 +126,41 @@ function chapterNext(chapterId) {
   return chapters[index + 1];
 }
 
+function Reveal({ children, reducedMotion, className = "" }) {
+  if (reducedMotion) {
+    return <div className={className}>{children}</div>;
+  }
+
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 22 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.52, ease: easeOut }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 function ChapterActions({ chapterId, onJump }) {
   const next = chapterNext(chapterId);
   return (
-    <div className="mt-7 flex flex-wrap gap-3">
+    <div className="mt-6 flex flex-wrap gap-2">
       {next ? (
         <button
           type="button"
           onClick={() => onJump(next.id)}
-          className="rounded-full border border-aqua/40 bg-aqua/10 px-4 py-2 text-xs font-semibold tracking-wide text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/20"
+          className="rounded-full border border-aqua/45 bg-aqua/10 px-4 py-2 text-xs font-semibold tracking-wide text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/20"
         >
-          Next Chapter: {next.label}
+          Next: {next.label}
         </button>
       ) : null}
       <button
         type="button"
         onClick={() => onJump("chapter-hero")}
-        className="rounded-full border border-ink/20 bg-white/70 px-4 py-2 text-xs font-semibold tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white"
+        className="rounded-full border border-ink/20 bg-white px-4 py-2 text-xs font-semibold tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white/90"
       >
         Back To Intro
       </button>
@@ -100,11 +168,38 @@ function ChapterActions({ chapterId, onJump }) {
   );
 }
 
+function StatCard({ title, value, subcopy }) {
+  return (
+    <article className="panel-glass rounded-2xl p-4">
+      <p className="text-[11px] uppercase tracking-[0.12em] text-muted">{title}</p>
+      <p className="mono-numeric mt-2 text-2xl font-semibold text-ink">{value}</p>
+      {subcopy ? <p className="mt-1 text-xs text-muted">{subcopy}</p> : null}
+    </article>
+  );
+}
+
+function RatingPill({ label }) {
+  const style = ratingTone[label] || { background: "#edf2f8", border: "#d1dae6", color: "#2a3340" };
+
+  return (
+    <span
+      className="inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+      style={{
+        backgroundColor: style.background,
+        borderColor: style.border,
+        color: style.color
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
 function RadarPanel({ profile }) {
   const width = 360;
   const height = 320;
   const cx = 180;
-  const cy = 165;
+  const cy = 160;
   const maxRadius = 108;
   const maxValue = 5;
   const axisCount = profile.labels.length;
@@ -126,11 +221,11 @@ function RadarPanel({ profile }) {
   const meanScore = profile.values.reduce((sum, value) => sum + value, 0) / profile.values.length;
 
   return (
-    <article className="glass-panel rounded-2xl p-4">
+    <article className="rounded-2xl border border-ink/12 bg-white/85 p-4">
       <h4 className="text-sm font-semibold text-ink">{profile.title}</h4>
-      <p className="mt-2 text-xs text-muted">
-        {profile.subtitle} | Mean: {meanScore.toFixed(2)} / 5
-      </p>
+      <p className="mt-1 text-xs text-muted">{profile.subtitle}</p>
+      <p className="mt-1 text-xs font-semibold text-ink">Mean: {meanScore.toFixed(2)} / 5</p>
+
       <svg viewBox={`0 0 ${width} ${height}`} className="mt-3 h-auto w-full" aria-hidden="true">
         {rings.map((points, index) => (
           <polygon
@@ -144,7 +239,7 @@ function RadarPanel({ profile }) {
 
         {profile.labels.map((label, index) => {
           const end = radarPoint(cx, cy, maxRadius, (360 / axisCount) * index);
-          const labelPoint = radarPoint(cx, cy, maxRadius + 21, (360 / axisCount) * index);
+          const labelPoint = radarPoint(cx, cy, maxRadius + 18, (360 / axisCount) * index);
           const anchor = labelPoint.x < cx - 8 ? "end" : labelPoint.x > cx + 8 ? "start" : "middle";
           return (
             <g key={`axis-${label}`}>
@@ -153,7 +248,7 @@ function RadarPanel({ profile }) {
                 y1={cy}
                 x2={end.x.toFixed(2)}
                 y2={end.y.toFixed(2)}
-                stroke="rgba(31,42,55,0.22)"
+                stroke="rgba(31,42,55,0.2)"
                 strokeWidth="1"
               />
               <text
@@ -168,7 +263,17 @@ function RadarPanel({ profile }) {
           );
         })}
 
-        <polygon points={polygon} fill={profile.color} fillOpacity="0.24" stroke={profile.color} strokeWidth="2" />
+        <motion.polygon
+          points={polygon}
+          fill={profile.color}
+          fillOpacity="0.24"
+          stroke={profile.color}
+          strokeWidth="2"
+          initial={{ pathLength: 0, opacity: 0.22 }}
+          whileInView={{ pathLength: 1, opacity: 1 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.8, ease: easeOut }}
+        />
 
         {vertices.map((point, index) => (
           <circle key={`vertex-${index}`} cx={point.x} cy={point.y} r="3" fill={profile.color} />
@@ -178,18 +283,8 @@ function RadarPanel({ profile }) {
   );
 }
 
-function Reveal({ children, className = "" }) {
-  return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 26 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.18 }}
-      transition={{ duration: 0.55, ease: "easeOut" }}
-    >
-      {children}
-    </motion.div>
-  );
+function signed(value, digits = 2) {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(digits)}`;
 }
 
 export default function App() {
@@ -200,39 +295,35 @@ export default function App() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
 
-  const lowEndDevice = useMemo(() => {
-    if (typeof navigator === "undefined" || reducedMotion) {
-      return false;
-    }
-    const lowMemory = navigator.deviceMemory && navigator.deviceMemory <= 4;
-    const lowCpu = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
-    return Boolean(lowMemory || lowCpu);
-  }, [reducedMotion]);
-
-  const runtimeMode = reducedMotion ? "Reduced" : lowEndDevice ? "Adaptive Lite" : "Dynamic";
-
   const [activeChapter, setActiveChapter] = useState("chapter-hero");
   const [progress, setProgress] = useState(0);
 
   const [frameworkSection, setFrameworkSection] = useState("all");
   const [frameworkPhase, setFrameworkPhase] = useState("post");
-  const [frameworkRole, setFrameworkRole] = useState("teachers");
   const [frameworkMode, setFrameworkMode] = useState("focus");
+  const [frameworkRole, setFrameworkRole] = useState("teachers");
+  const [frameworkChart, setFrameworkChart] = useState("slope");
+  const [frameworkReplay, setFrameworkReplay] = useState(0);
 
   const [comparisonSource, setComparisonSource] = useState("pre-post4");
   const [comparisonMetric, setComparisonMetric] = useState("count");
 
   const [learnerSearch, setLearnerSearch] = useState("");
-  const [learnerRating, setLearnerRating] = useState("all");
+  const [learnerSection, setLearnerSection] = useState("all");
+  const [preRatingFilter, setPreRatingFilter] = useState("all");
+  const [postRatingFilter, setPostRatingFilter] = useState("all");
+  const [focusedLearner, setFocusedLearner] = useState("");
+  const [tableView, setTableView] = useState("pre");
 
   const fieldClass = "mt-2 w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm text-ink outline-none ring-aqua/35 focus:ring";
+  const pillClass = "rounded-full border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted transition hover:border-aqua/45 hover:text-ink";
 
   const jumpToChapter = (chapterId) => {
-    const element = document.getElementById(chapterId);
-    if (!element) {
+    const node = document.getElementById(chapterId);
+    if (!node) {
       return;
     }
-    element.scrollIntoView({
+    node.scrollIntoView({
       behavior: reducedMotion ? "auto" : "smooth",
       block: "start"
     });
@@ -242,8 +333,8 @@ export default function App() {
     const handleScroll = () => {
       const top = window.scrollY || document.documentElement.scrollTop;
       const total = document.documentElement.scrollHeight - window.innerHeight;
-      const nextProgress = total > 0 ? Math.min((top / total) * 100, 100) : 0;
-      setProgress(nextProgress);
+      const value = total > 0 ? Math.min((top / total) * 100, 100) : 0;
+      setProgress(value);
     };
 
     handleScroll();
@@ -257,7 +348,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const observedIds = chapters.map((chapter) => chapter.id);
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
@@ -270,13 +360,13 @@ export default function App() {
       },
       {
         root: null,
-        rootMargin: "-45% 0px -45% 0px",
-        threshold: [0.05, 0.25, 0.5]
+        rootMargin: "-42% 0px -42% 0px",
+        threshold: [0.08, 0.35, 0.62]
       }
     );
 
-    observedIds.forEach((id) => {
-      const node = document.getElementById(id);
+    chapters.forEach((chapter) => {
+      const node = document.getElementById(chapter.id);
       if (node) {
         observer.observe(node);
       }
@@ -294,54 +384,58 @@ export default function App() {
         learners: 0,
         meanScore: 0,
         weightedPercent: 0,
+        meanGain: 0,
         topLabel: "No data",
-        topCount: 0,
-        topPercent: 0
+        topCount: 0
       };
     }
 
     const meanScore = frameworkPairs.reduce((sum, pair) => sum + phaseRecord(pair, frameworkPhase).score, 0) / total;
     const weightedPercent = frameworkPairs.reduce((sum, pair) => sum + phaseRecord(pair, frameworkPhase).percent, 0) / total;
+    const meanGain = frameworkPairs.reduce((sum, pair) => sum + (pair.post.score - pair.pre.score), 0) / total;
 
     const counts = countsByRating(frameworkPairs, frameworkPhase);
-    const top = counts.reduce((prev, current) => (current.count > prev.count ? current : prev), counts[0]);
+    const top = counts.reduce((best, row) => (row.count > best.count ? row : best), counts[0]);
 
     return {
       learners: total,
       meanScore,
       weightedPercent,
+      meanGain,
       topLabel: top.label,
-      topCount: top.count,
-      topPercent: ratioWidth(top.count, total)
+      topCount: top.count
     };
   }, [frameworkPairs, frameworkPhase]);
 
   const slopeGraph = useMemo(() => {
-    const width = 860;
+    const width = 920;
     const height = 360;
-    const margin = { top: 24, right: 92, bottom: 44, left: 92 };
+    const margin = { top: 24, right: 94, bottom: 44, left: 94 };
     const xPre = margin.left;
     const xPost = width - margin.right;
     const yTop = margin.top;
     const yBottom = height - margin.bottom;
 
-    const toY = (score) => yBottom - ((score / 40) * (yBottom - yTop));
+    const toY = (score) => yBottom - ((score / TOTAL_SCORE) * (yBottom - yTop));
 
     const lines = frameworkPairs.map((pair) => {
       const preY = toY(pair.pre.score);
       const postY = toY(pair.post.score);
       const delta = pair.post.score - pair.pre.score;
+
       return {
         learner: pair.learner,
         preY,
         postY,
-        stroke: delta < 0 ? "rgba(255, 125, 101, 0.6)" : "rgba(35, 215, 186, 0.58)"
+        delta,
+        stroke: delta < 0 ? "rgba(213,109,95,0.65)" : "rgba(47,158,154,0.62)"
       };
     });
 
     return {
       width,
       height,
+      margin,
       xPre,
       xPost,
       yTop,
@@ -353,123 +447,86 @@ export default function App() {
   }, [frameworkPairs]);
 
   const histogram = useMemo(() => {
-    const compareOn = frameworkMode === "compare";
-    const sectionKeys = compareOn && frameworkSection === "all"
-      ? ["Honest", "Patience"]
-      : [frameworkSection];
-
-    const currentSeries = sectionKeys.map((key) => ({
-      key,
-      counts: countsByRating(pairsBySection(key), frameworkPhase)
-    }));
-
-    const opposite = frameworkPhase === "pre" ? "post" : "pre";
-    const overlaySeries = sectionKeys.map((key) => ({
-      key,
-      counts: countsByRating(pairsBySection(key), opposite)
-    }));
+    const current = countsByRating(frameworkPairs, frameworkPhase);
+    const oppositePhase = frameworkPhase === "pre" ? "post" : "pre";
+    const opposite = countsByRating(frameworkPairs, oppositePhase);
 
     const maxCount = Math.max(
       1,
-      ...currentSeries.flatMap((entry) => entry.counts.map((item) => item.count)),
-      ...(compareOn ? overlaySeries.flatMap((entry) => entry.counts.map((item) => item.count)) : [])
+      ...current.map((row) => row.count),
+      ...(frameworkMode === "compare" ? opposite.map((row) => row.count) : [])
     );
 
-    const width = 860;
-    const height = 360;
-    const margin = { top: 26, right: 24, bottom: 74, left: 58 };
-    const plotWidth = width - margin.left - margin.right;
-    const plotHeight = height - margin.top - margin.bottom;
-    const groupWidth = plotWidth / ratingOrder.length;
-    const barWidth = sectionKeys.length === 2 ? groupWidth * 0.26 : groupWidth * 0.42;
+    const bins = ratingOrder.map((label, index) => {
+      const currentCount = current[index].count;
+      const oppositeCount = opposite[index].count;
+      const currentPercent = frameworkPairs.length ? (currentCount / frameworkPairs.length) * 100 : 0;
+      const oppositePercent = frameworkPairs.length ? (oppositeCount / frameworkPairs.length) * 100 : 0;
+      const delta = currentCount - oppositeCount;
+      const currentHeight = ratioWidth(currentCount, maxCount);
+      const oppositeHeight = ratioWidth(oppositeCount, maxCount);
+      const palette = histogramPalette[label] || histogramPalette.Anchoring;
 
-    const toY = (count) => margin.top + plotHeight - ((count / maxCount) * plotHeight);
-
-    const bars = [];
-
-    ratingOrder.forEach((label, levelIndex) => {
-      const baseX = margin.left + (levelIndex * groupWidth);
-      sectionKeys.forEach((key, sectionIndex) => {
-        const currentCount = currentSeries.find((entry) => entry.key === key).counts[levelIndex].count;
-        const overlayCount = overlaySeries.find((entry) => entry.key === key).counts[levelIndex].count;
-
-        const spacing = sectionKeys.length === 2 ? groupWidth * 0.13 : groupWidth * 0.29;
-        const x = baseX + spacing + (sectionIndex * (barWidth + groupWidth * 0.08));
-
-        const color = key === "Honest"
-          ? "rgba(35, 215, 186, 0.78)"
-          : key === "Patience"
-            ? "rgba(126, 198, 255, 0.76)"
-            : "rgba(255, 186, 82, 0.78)";
-
-        bars.push({
-          key: `${label}-${key}`,
-          x,
-          label,
-          color,
-          currentCount,
-          overlayCount,
-          yCurrent: toY(currentCount),
-          hCurrent: margin.top + plotHeight - toY(currentCount),
-          yOverlay: toY(overlayCount),
-          hOverlay: margin.top + plotHeight - toY(overlayCount)
-        });
-      });
+      return {
+        label,
+        labelLines: histogramLabelLines[label] || [label],
+        palette,
+        currentCount,
+        oppositeCount,
+        currentPercent,
+        oppositePercent,
+        currentHeight: currentCount > 0 ? Math.max(currentHeight, 8) : 0,
+        oppositeHeight: oppositeCount > 0 ? Math.max(oppositeHeight, 8) : 0,
+        delta
+      };
     });
 
+    const topRow = bins.reduce((best, row) => (row.currentCount > best.currentCount ? row : best), bins[0]);
+    const ticks = Array.from({ length: 5 }, (_, index) => Math.round((maxCount / 4) * index));
+
     return {
-      width,
-      height,
-      margin,
-      plotHeight,
-      compareOn,
-      opposite,
       maxCount,
-      groupWidth,
-      barWidth,
-      sectionKeys,
-      bars
+      oppositePhase,
+      bins,
+      ticks,
+      topRow
     };
-  }, [frameworkMode, frameworkSection, frameworkPhase]);
+  }, [frameworkPairs, frameworkPhase, frameworkMode]);
 
-  const histogramNote = useMemo(() => {
-    const opposite = frameworkPhase === "pre" ? "post" : "pre";
-
-    if (frameworkMode === "compare" && frameworkSection === "all") {
-      const honestMean = pairsBySection("Honest").reduce((sum, pair) => sum + phaseRecord(pair, frameworkPhase).score, 0) / 25;
-      const patienceMean = pairsBySection("Patience").reduce((sum, pair) => sum + phaseRecord(pair, frameworkPhase).score, 0) / 31;
-      return `${frameworkPhase === "pre" ? "Pre-test" : "Post-test"} section means: Honest ${honestMean.toFixed(2)} vs Patience ${patienceMean.toFixed(2)} (out of 40).`;
+  const histogramInsight = useMemo(() => {
+    if (!frameworkPairs.length) {
+      return "No learner data available in this filter scope.";
     }
 
-    const pairs = pairsBySection(frameworkSection);
-    const meanCurrent = pairs.reduce((sum, pair) => sum + phaseRecord(pair, frameworkPhase).score, 0) / pairs.length;
+    const currentMean = frameworkPairs.reduce((sum, pair) => sum + phaseRecord(pair, frameworkPhase).score, 0) / frameworkPairs.length;
 
     if (frameworkMode === "compare") {
-      const meanOther = pairs.reduce((sum, pair) => sum + phaseRecord(pair, opposite).score, 0) / pairs.length;
-      const delta = meanCurrent - meanOther;
-      return `${sectionLabel(frameworkSection)}: ${frameworkPhase} mean ${meanCurrent.toFixed(2)} vs ${opposite} mean ${meanOther.toFixed(2)} (delta ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}).`;
+      const opposite = frameworkPhase === "pre" ? "post" : "pre";
+      const otherMean = frameworkPairs.reduce((sum, pair) => sum + phaseRecord(pair, opposite).score, 0) / frameworkPairs.length;
+      const delta = currentMean - otherMean;
+      return `${sectionLabel(frameworkSection)}: ${frameworkPhase} mean ${currentMean.toFixed(2)} vs ${opposite} mean ${otherMean.toFixed(2)} (delta ${signed(delta, 2)}).`;
     }
 
-    return `${sectionLabel(frameworkSection)}: ${frameworkPhase} mean ${meanCurrent.toFixed(2)} (out of 40).`;
-  }, [frameworkMode, frameworkSection, frameworkPhase]);
+    return `${sectionLabel(frameworkSection)} ${frameworkPhase} mean is ${currentMean.toFixed(2)} out of 40.`;
+  }, [frameworkPairs, frameworkSection, frameworkPhase, frameworkMode]);
 
   const evaluatorProfiles = useMemo(() => {
     const teachers = {
       key: "teachers",
       title: "Teachers + Master Teacher (LRMDS)",
-      subtitle: "n=11; normalized to 5-point scale from Tables 4-6",
+      subtitle: "n=11, normalized to 5-point scale",
       labels: ["Content", "Instructional", "Technical"],
       values: researchData.qualityScores.slice(0, 3).map((row) => (row.score / row.max) * 5),
-      color: "#23d7ba"
+      color: "#2f9e9a"
     };
 
     const it = {
       key: "it",
       title: "IT Expert (ISO 9621-1)",
-      subtitle: "n=1; normalized to 5-point scale from Table 8",
+      subtitle: "n=1, normalized to 5-point scale",
       labels: researchData.itExpertScores.map((row) => row.label),
       values: researchData.itExpertScores.map((row) => (row.score / row.max) * 5),
-      color: "#ffba52"
+      color: "#c8872f"
     };
 
     if (frameworkRole === "teachers") {
@@ -478,8 +535,8 @@ export default function App() {
     if (frameworkRole === "it") {
       return [it];
     }
-    return frameworkMode === "compare" ? [teachers, it] : [teachers];
-  }, [frameworkRole, frameworkMode]);
+    return [teachers, it];
+  }, [frameworkRole]);
 
   const comparisonSeries = useMemo(() => {
     if (comparisonSource === "pre-post5") {
@@ -490,6 +547,7 @@ export default function App() {
         seriesB: researchData.posttestChapter5Summary
       };
     }
+
     if (comparisonSource === "post4-post5") {
       return {
         nameA: "Post Ch4",
@@ -498,6 +556,7 @@ export default function App() {
         seriesB: researchData.posttestChapter5Summary
       };
     }
+
     return {
       nameA: "Pre",
       nameB: "Post Ch4",
@@ -517,18 +576,9 @@ export default function App() {
       const widthA = comparisonMetric === "percent"
         ? rowA.percent
         : ratioWidth(rowA.count, researchData.totalLearners);
-
       const widthB = comparisonMetric === "percent"
         ? rowB.percent
         : ratioWidth(rowB.count, researchData.totalLearners);
-
-      const valueA = comparisonMetric === "percent"
-        ? `${rowA.percent.toFixed(2)}% (${rowA.count})`
-        : `${rowA.count} (${rowA.percent.toFixed(2)}%)`;
-
-      const valueB = comparisonMetric === "percent"
-        ? `${rowB.percent.toFixed(2)}% (${rowB.count})`
-        : `${rowB.count} (${rowB.percent.toFixed(2)}%)`;
 
       const delta = comparisonMetric === "percent"
         ? rowB.percent - rowA.percent
@@ -536,39 +586,52 @@ export default function App() {
 
       return {
         label,
+        rowA,
+        rowB,
         widthA,
         widthB,
-        valueA,
-        valueB,
         delta
       };
     });
   }, [comparisonSeries, comparisonMetric]);
 
   const comparisonInsight = useMemo(() => {
-    const maxUp = comparisonRows.reduce((prev, current) => (current.delta > prev.delta ? current : prev), comparisonRows[0]);
-    const maxDown = comparisonRows.reduce((prev, current) => (current.delta < prev.delta ? current : prev), comparisonRows[0]);
+    if (!comparisonRows.length) {
+      return "No comparison data available.";
+    }
 
+    const maxUp = comparisonRows.reduce((best, row) => (row.delta > best.delta ? row : best), comparisonRows[0]);
+    const maxDown = comparisonRows.reduce((best, row) => (row.delta < best.delta ? row : best), comparisonRows[0]);
     const unit = comparisonMetric === "percent" ? "pp" : "learners";
-    const formatValue = (value) => (comparisonMetric === "percent" ? value.toFixed(2) : `${Math.round(value)}`);
+    const digits = comparisonMetric === "percent" ? 2 : 0;
 
-    return `${comparisonSeries.nameA} to ${comparisonSeries.nameB}: largest increase is ${maxUp.label} (${maxUp.delta >= 0 ? "+" : ""}${formatValue(maxUp.delta)} ${unit}); largest decrease is ${maxDown.label} (${maxDown.delta >= 0 ? "+" : ""}${formatValue(maxDown.delta)} ${unit}).`;
+    return `${comparisonSeries.nameA} to ${comparisonSeries.nameB}: largest increase is ${maxUp.label} (${signed(maxUp.delta, digits)} ${unit}); largest decrease is ${maxDown.label} (${signed(maxDown.delta, digits)} ${unit}).`;
   }, [comparisonRows, comparisonMetric, comparisonSeries]);
 
-  const filteredLearners = useMemo(() => {
+  const learnerBase = useMemo(() => {
     const query = learnerSearch.trim().toUpperCase();
     const numeric = query.replace(/[^0-9]/g, "");
 
-    return learnerPairs.filter((pair) => {
-      const learnerUpper = pair.learner.toUpperCase();
-      const queryMatch = !query || learnerUpper.includes(query) || (numeric && String(pair.number).includes(numeric));
-      const ratingMatch = learnerRating === "all" || pair.post.rating === learnerRating;
-      return queryMatch && ratingMatch;
+    return pairsBySection(learnerSection).filter((pair) => {
+      if (!query) {
+        return true;
+      }
+
+      const learner = pair.learner.toUpperCase();
+      return learner.includes(query) || (numeric && String(pair.number).includes(numeric));
     });
-  }, [learnerSearch, learnerRating]);
+  }, [learnerSearch, learnerSection]);
+
+  const preRows = useMemo(() => {
+    return learnerBase.filter((pair) => preRatingFilter === "all" || pair.pre.rating === preRatingFilter);
+  }, [learnerBase, preRatingFilter]);
+
+  const postRows = useMemo(() => {
+    return learnerBase.filter((pair) => postRatingFilter === "all" || pair.post.rating === postRatingFilter);
+  }, [learnerBase, postRatingFilter]);
 
   const learnerInsights = useMemo(() => {
-    if (!filteredLearners.length) {
+    if (!learnerBase.length) {
       return {
         avgPre: 0,
         avgPost: 0,
@@ -576,100 +639,107 @@ export default function App() {
       };
     }
 
-    const avgPre = filteredLearners.reduce((sum, row) => sum + row.pre.percent, 0) / filteredLearners.length;
-    const avgPost = filteredLearners.reduce((sum, row) => sum + row.post.percent, 0) / filteredLearners.length;
-    const meanGain = filteredLearners.reduce((sum, row) => sum + (row.post.score - row.pre.score), 0) / filteredLearners.length;
+    const avgPre = learnerBase.reduce((sum, pair) => sum + pair.pre.percent, 0) / learnerBase.length;
+    const avgPost = learnerBase.reduce((sum, pair) => sum + pair.post.percent, 0) / learnerBase.length;
+    const meanGain = learnerBase.reduce((sum, pair) => sum + (pair.post.score - pair.pre.score), 0) / learnerBase.length;
 
     return { avgPre, avgPost, meanGain };
-  }, [filteredLearners]);
+  }, [learnerBase]);
 
-  const chapterStateClass = (chapterId) => (activeChapter === chapterId ? "story-chapter-active" : "");
+  const learnerDistribution = useMemo(() => {
+    return {
+      pre: countsByRating(learnerBase, "pre"),
+      post: countsByRating(learnerBase, "post")
+    };
+  }, [learnerBase]);
+
+  const maxGainAbs = useMemo(() => {
+    if (!learnerBase.length) {
+      return 1;
+    }
+
+    return Math.max(...learnerBase.map((pair) => Math.abs(pair.post.score - pair.pre.score)), 1);
+  }, [learnerBase]);
+
+  const chapterClass = (id) => (
+    activeChapter === id
+      ? "story-chapter-active ring-1 ring-aqua/35"
+      : "story-chapter-inactive"
+  );
+
+  const chartKey = `${frameworkChart}-${frameworkReplay}-${frameworkMode}-${frameworkSection}-${frameworkPhase}-${frameworkRole}`;
 
   return (
-    <div className="story-root relative min-h-screen">
-      <div className="app-grain" aria-hidden="true" />
+    <div className="relative min-h-screen overflow-x-hidden text-ink">
+      <div className="aurora-bg" aria-hidden="true" />
 
       <header
         id="chapter-hero"
-        className={`story-chapter story-hero relative z-10 flex min-h-[92vh] items-center px-4 pb-16 pt-20 sm:px-6 lg:px-8 ${chapterStateClass("chapter-hero")}`}
+        className={`story-chapter relative z-10 px-4 pb-14 pt-16 sm:px-6 lg:px-8 ${chapterClass("chapter-hero")}`}
       >
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end"
-        >
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-aqua">Undergraduate Thesis Visual Story</p>
-            <h1 className="mt-4 max-w-4xl font-display text-4xl leading-[1.02] sm:text-5xl lg:text-6xl">
-              Enhancing Numeracy Skills Of Grade 3 Learners Through PowerMathSaya
-            </h1>
-            <p className="mt-5 max-w-3xl text-sm leading-relaxed text-muted sm:text-base">
-              College of Education, Daet Camarines Norte. Scroll down for a continuous narrative from
-              research context to charts, statistical results, and evaluator findings.
-            </p>
+        <Reveal reducedMotion={reducedMotion}>
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-aqua">PowerMathSaya Research Story</p>
+              <h1 className="mt-4 max-w-5xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">
+                Interactive Visualization Of Grade 3 Numeracy Gains
+              </h1>
+              <p className="mt-5 max-w-3xl text-sm leading-relaxed text-muted sm:text-base">
+                Built from documented thesis data using chapter-based storytelling, animated charts, and separated
+                pre-test and post-test learner views for clearer interpretation.
+              </p>
 
-            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.12em] text-muted">Research Proponents</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {proponents.map((name) => (
-                <span key={name} className="landing-pill rounded-full px-3 py-1.5 text-xs font-semibold text-ink">
-                  {name}
-                </span>
-              ))}
+              <p className="mt-6 text-xs font-semibold uppercase tracking-[0.12em] text-muted">Research Proponents</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {proponents.map((name) => (
+                  <span key={name} className="rounded-full border border-ink/15 bg-white/80 px-3 py-1.5 text-xs font-semibold text-ink">
+                    {name}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-7 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => jumpToChapter("chapter-framework")}
+                  className="rounded-full border border-aqua/45 bg-aqua/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/20"
+                >
+                  Explore Framework
+                </button>
+                <button
+                  type="button"
+                  onClick={() => jumpToChapter("chapter-learners")}
+                  className="rounded-full border border-ink/20 bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink transition hover:-translate-y-0.5 hover:bg-white/90"
+                >
+                  Jump To Learner Tables
+                </button>
+              </div>
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => jumpToChapter("chapter-method")}
-                className="rounded-full border border-aqua/40 bg-aqua/10 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/20"
-              >
-                Start Scroll Story
-              </button>
-              <button
-                type="button"
-                onClick={() => jumpToChapter("chapter-framework")}
-                className="rounded-full border border-ink/20 bg-white/80 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white"
-              >
-                Jump To Charts
-              </button>
-            </div>
-
-            <motion.p
-              className="mt-8 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted"
-              animate={reducedMotion ? undefined : { y: [0, 5, 0] }}
-              transition={reducedMotion ? undefined : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            >
-              Scroll To Explore Data
-            </motion.p>
+            <aside className="panel-glass rounded-3xl p-5 sm:p-6">
+              <h2 className="text-base font-semibold text-ink">Research Snapshot</h2>
+              <p className="mt-2 text-sm text-muted">Quick defense-ready values before diving into charts.</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {[
+                  ["Learners", "56"],
+                  ["Evaluators", "12"],
+                  ["Mean Difference", `+${researchData.tTest.meanDifference.toFixed(2)}`],
+                  ["Paired t-test", `t(55)=${researchData.tTest.t.toFixed(2)}`],
+                  ["p-value", researchData.tTest.p],
+                  ["Scroll Progress", `${Math.round(progress)}%`]
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-2xl border border-ink/10 bg-white/85 p-3">
+                    <p className="text-[11px] uppercase tracking-[0.1em] text-muted">{label}</p>
+                    <p className="mono-numeric mt-1.5 text-sm font-semibold text-ink">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </aside>
           </div>
-
-          <aside className="glass-panel rounded-3xl p-5 sm:p-6">
-            <h2 className="text-base font-semibold text-ink">Research Snapshot</h2>
-            <p className="mt-2 text-sm text-muted">Simple essentials before diving into chapter-by-chapter analytics.</p>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {[
-                ["Learners", "56"],
-                ["Evaluators", "12"],
-                ["Paired t-test", "t(55) = 33.96"],
-                ["Runtime", runtimeMode],
-                ["Chapters", "3, 4, and 5"],
-                ["Progress", `${Math.round(progress)}%`]
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl border border-ink/10 bg-white/75 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted">{label}</p>
-                  <p className="mt-1.5 text-sm font-semibold text-ink">{value}</p>
-                </div>
-              ))}
-            </div>
-          </aside>
-        </motion.div>
+        </Reveal>
       </header>
 
-      <div className="narrative-divider" aria-hidden="true" />
-
-      <div className="sticky top-0 z-30 border-y border-ink/10 bg-[#f8fbffd9]/95 backdrop-blur-xl">
+      <div className="sticky top-0 z-30 border-y border-ink/10 bg-[#f4f9ffd8] backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
           {chapters.map((chapter) => {
             const active = activeChapter === chapter.id;
@@ -680,8 +750,8 @@ export default function App() {
                 onClick={() => jumpToChapter(chapter.id)}
                 className={`whitespace-nowrap rounded-full border px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition ${
                   active
-                    ? "border-aqua/60 bg-aqua/15 text-aqua"
-                    : "border-ink/20 bg-white/80 text-muted hover:bg-white hover:text-ink"
+                    ? "border-aqua/60 bg-aqua/12 text-aqua"
+                    : "border-ink/20 bg-white/80 text-muted hover:border-aqua/35 hover:text-ink"
                 }`}
               >
                 {chapter.label}
@@ -689,6 +759,7 @@ export default function App() {
             );
           })}
         </div>
+
         <div className="h-1 w-full bg-ink/10">
           <motion.div
             className="h-full bg-gradient-to-r from-aqua via-sky to-coral"
@@ -698,56 +769,29 @@ export default function App() {
         </div>
       </div>
 
-      <main className="story-main relative z-10 pb-20">
-        <section id="chapter-method" className={`chapter-shell story-chapter ${chapterStateClass("chapter-method")}`}>
-          <Reveal>
-            <h2 className="section-title">Chapter 3: Methodology Snapshot</h2>
-            <p className="section-copy">
-              Quantitative-Descriptive-Developmental-Evaluative design using ALNAT pretest-posttest,
-              paired sample t-test, and evaluator-based quality assessment.
+      <main className="relative z-10 mx-auto max-w-7xl space-y-5 px-4 pb-20 pt-6 sm:px-6 lg:px-8">
+        <section id="chapter-framework" className={`story-chapter panel-glass rounded-3xl p-5 sm:p-6 ${chapterClass("chapter-framework")}`}>
+          <Reveal reducedMotion={reducedMotion}>
+            <h2 className="font-display text-3xl leading-tight">Framework Dashboard</h2>
+            <p className="mt-2 text-sm text-muted">
+              Focus/compare controls, role filters, and animated chart transitions make interpretation presentation-ready.
             </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {[
-                ["Participants", "56 Grade 3 learners from two sections."],
-                ["Intervention Window", "4-week implementation from February to March 2025."],
-                ["Core Instruments", "ALNAT pretest/posttest plus LRMDS and ISO 9621-1 evaluations."],
-                ["Analysis", "Frequency, percentage, weighted mean, and paired t-test."]
-              ].map(([title, copy]) => (
-                <article key={title} className="glass-panel rounded-2xl p-4">
-                  <h3 className="text-sm font-semibold text-ink">{title}</h3>
-                  <p className="mt-2 text-sm text-muted">{copy}</p>
-                </article>
-              ))}
-            </div>
-
-            <ChapterActions chapterId="chapter-method" onJump={jumpToChapter} />
-          </Reveal>
-        </section>
-
-        <section id="chapter-framework" className={`chapter-shell story-chapter ${chapterStateClass("chapter-framework")}`}>
-          <Reveal>
-            <h2 className="section-title">Computational Visualization and Performance Analytics Framework</h2>
-            <p className="section-copy">
-              Interactive analysis of ALNAT pre-post performance and evaluator results using section,
-              phase, and role filters based on documented thesis values.
-            </p>
-
-            <div className="mt-8 grid gap-4 lg:grid-cols-4">
-              <label className="glass-panel rounded-2xl p-4 text-sm">
+            <div className="mt-6 grid gap-4 lg:grid-cols-4">
+              <label className="text-sm">
                 <span className="text-xs uppercase tracking-[0.1em] text-muted">Section Filter</span>
                 <select
                   className={fieldClass}
                   value={frameworkSection}
                   onChange={(event) => setFrameworkSection(event.target.value)}
                 >
-                  <option value="all">All Learners (Aggregate 56)</option>
-                  <option value="Honest">Grade 3-Honest (25)</option>
-                  <option value="Patience">Grade 3-Patience (31)</option>
+                  {sectionOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label} ({option.count})</option>
+                  ))}
                 </select>
               </label>
 
-              <div className="glass-panel rounded-2xl p-4 text-sm">
+              <div className="text-sm">
                 <span className="text-xs uppercase tracking-[0.1em] text-muted">Pre/Post Toggle</span>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {["pre", "post"].map((phase) => (
@@ -755,7 +799,7 @@ export default function App() {
                       key={phase}
                       type="button"
                       onClick={() => setFrameworkPhase(phase)}
-                      className={`pill-btn ${frameworkPhase === phase ? "pill-btn-active" : ""}`}
+                      className={`${pillClass} ${frameworkPhase === phase ? "border-aqua/60 bg-aqua/10 text-aqua" : ""}`}
                     >
                       {phase === "pre" ? "Pre-test" : "Post-test"}
                     </button>
@@ -763,8 +807,24 @@ export default function App() {
                 </div>
               </div>
 
-              <label className="glass-panel rounded-2xl p-4 text-sm">
-                <span className="text-xs uppercase tracking-[0.1em] text-muted">Evaluator Role Filter</span>
+              <div className="text-sm">
+                <span className="text-xs uppercase tracking-[0.1em] text-muted">View Mode</span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {["focus", "compare"].map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setFrameworkMode(mode)}
+                      className={`${pillClass} ${frameworkMode === mode ? "border-aqua/60 bg-aqua/10 text-aqua" : ""}`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="text-sm">
+                <span className="text-xs uppercase tracking-[0.1em] text-muted">Evaluator Role</span>
                 <select
                   className={fieldClass}
                   value={frameworkRole}
@@ -772,308 +832,274 @@ export default function App() {
                 >
                   <option value="teachers">Teachers + Master Teacher</option>
                   <option value="it">IT Expert</option>
-                  <option value="all">Teachers + IT Expert (Compare)</option>
+                  <option value="all">Compare Teachers + IT</option>
                 </select>
               </label>
+            </div>
 
-              <div className="glass-panel rounded-2xl p-4 text-sm">
-                <span className="text-xs uppercase tracking-[0.1em] text-muted">View Mode</span>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {["focus", "compare"].map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => {
-                        setFrameworkMode(mode);
-                        if (mode === "focus" && frameworkRole === "all") {
-                          setFrameworkRole("teachers");
-                        }
-                      }}
-                      className={`pill-btn ${frameworkMode === mode ? "pill-btn-active" : ""}`}
-                    >
-                      {mode === "focus" ? "Focus" : "Compare"}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">Chart Studio</span>
+              {chartOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFrameworkChart(option.value)}
+                  className={`${pillClass} ${frameworkChart === option.value ? "border-aqua/60 bg-aqua/10 text-aqua" : ""}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setFrameworkReplay((value) => value + 1)}
+                className="ml-auto rounded-full border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted transition hover:border-aqua/35 hover:text-ink"
+              >
+                Replay Chart Transition
+              </button>
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <article className="glass-panel rounded-2xl p-4">
-                <p className="text-[11px] uppercase tracking-[0.1em] text-muted">Matched Learners</p>
-                <p className="mt-2 text-xl font-semibold">{frameworkKpis.learners}</p>
-              </article>
-              <article className="glass-panel rounded-2xl p-4">
-                <p className="text-[11px] uppercase tracking-[0.1em] text-muted">Mean Score</p>
-                <p className="mt-2 text-xl font-semibold">{frameworkKpis.meanScore.toFixed(2)} / 40</p>
-              </article>
-              <article className="glass-panel rounded-2xl p-4">
-                <p className="text-[11px] uppercase tracking-[0.1em] text-muted">Weighted Mean (%)</p>
-                <p className="mt-2 text-xl font-semibold">{frameworkKpis.weightedPercent.toFixed(2)}%</p>
-              </article>
-              <article className="glass-panel rounded-2xl p-4">
-                <p className="text-[11px] uppercase tracking-[0.1em] text-muted">Top Frequency</p>
-                <p className="mt-2 text-sm font-semibold">
-                  {frameworkKpis.topLabel}: {frameworkKpis.topCount} ({frameworkKpis.topPercent.toFixed(2)}%)
-                </p>
-              </article>
+              <StatCard title="Matched Learners" value={`${frameworkKpis.learners}`} subcopy={sectionLabel(frameworkSection)} />
+              <StatCard title="Mean Score" value={`${frameworkKpis.meanScore.toFixed(2)} / 40`} subcopy={`${frameworkPhase} phase`} />
+              <StatCard title="Weighted Mean" value={`${frameworkKpis.weightedPercent.toFixed(2)}%`} subcopy="Percent score average" />
+              <StatCard title="Mean Gain" value={signed(frameworkKpis.meanGain, 2)} subcopy={`${frameworkKpis.topLabel}: ${frameworkKpis.topCount}`} />
             </div>
 
-            <div className="mt-5 grid gap-4 xl:grid-cols-2">
-              <article className="glass-panel rounded-2xl p-4">
-                <h3 className="text-base font-semibold">Paired Slopegraph: Pre-test To Post-test</h3>
-                <p className="mt-2 text-sm text-muted">
-                  Each line is one learner trajectory for paired sample interpretation.
-                </p>
+            <article className="chart-shell mt-5 rounded-2xl border border-ink/12 bg-white/86 p-4">
+              <AnimatePresence mode="wait">
+                {frameworkChart === "slope" ? (
+                  <motion.div
+                    key={`slope-${chartKey}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.36, ease: easeOut }}
+                  >
+                    <h3 className="text-base font-semibold text-ink">Paired Slopegraph: Pre-test To Post-test</h3>
+                    <p className="mt-1 text-sm text-muted">
+                      Each line is one learner trajectory; green lines indicate gains while coral lines indicate decline.
+                    </p>
 
-                <div className="mt-4 overflow-hidden rounded-xl border border-ink/15 bg-white/85">
-                  <svg viewBox={`0 0 ${slopeGraph.width} ${slopeGraph.height}`} className="h-auto w-full" aria-hidden="true">
-                    {slopeGraph.ticks.map((tick) => {
-                      const y = slopeGraph.toY(tick);
-                      return (
-                        <g key={`tick-${tick}`}>
-                          <line
-                            x1={slopeGraph.xPre - 14}
-                            y1={y}
-                            x2={slopeGraph.xPost + 14}
-                            y2={y}
-                            stroke="rgba(31,42,55,0.14)"
-                            strokeWidth="1"
-                          />
-                          <text x={slopeGraph.xPre - 20} y={y + 4} textAnchor="end" className="fill-muted text-[12px]">
-                            {tick}
-                          </text>
-                        </g>
-                      );
-                    })}
+                    <div className="mt-3 overflow-hidden rounded-xl border border-ink/12 bg-white/92">
+                      <svg viewBox={`0 0 ${slopeGraph.width} ${slopeGraph.height}`} className="h-auto w-full" aria-hidden="true">
+                        {slopeGraph.ticks.map((tick) => {
+                          const y = slopeGraph.toY(tick);
+                          return (
+                            <g key={`slope-tick-${tick}`}>
+                              <line
+                                x1={slopeGraph.xPre - 16}
+                                y1={y}
+                                x2={slopeGraph.xPost + 16}
+                                y2={y}
+                                stroke="rgba(31,42,55,0.14)"
+                              />
+                              <text x={slopeGraph.xPre - 22} y={y + 4} textAnchor="end" className="fill-muted text-[11px]">
+                                {tick}
+                              </text>
+                            </g>
+                          );
+                        })}
 
-                    <line
-                      x1={slopeGraph.xPre}
-                      y1={slopeGraph.yTop - 6}
-                      x2={slopeGraph.xPre}
-                      y2={slopeGraph.yBottom + 6}
-                      stroke="rgba(31,42,55,0.26)"
-                    />
-                    <line
-                      x1={slopeGraph.xPost}
-                      y1={slopeGraph.yTop - 6}
-                      x2={slopeGraph.xPost}
-                      y2={slopeGraph.yBottom + 6}
-                      stroke="rgba(31,42,55,0.26)"
-                    />
-
-                    <text x={slopeGraph.xPre} y={slopeGraph.yBottom + 24} textAnchor="middle" className="fill-ink text-[12px] font-semibold">
-                      Pre-test
-                    </text>
-                    <text x={slopeGraph.xPost} y={slopeGraph.yBottom + 24} textAnchor="middle" className="fill-ink text-[12px] font-semibold">
-                      Post-test
-                    </text>
-
-                    {slopeGraph.lines.map((line) => (
-                      <g key={line.learner}>
                         <line
                           x1={slopeGraph.xPre}
-                          y1={line.preY}
+                          y1={slopeGraph.yTop - 4}
+                          x2={slopeGraph.xPre}
+                          y2={slopeGraph.yBottom + 4}
+                          stroke="rgba(31,42,55,0.26)"
+                        />
+                        <line
+                          x1={slopeGraph.xPost}
+                          y1={slopeGraph.yTop - 4}
                           x2={slopeGraph.xPost}
-                          y2={line.postY}
-                          stroke={line.stroke}
-                          strokeWidth="2"
+                          y2={slopeGraph.yBottom + 4}
+                          stroke="rgba(31,42,55,0.26)"
                         />
-                        <circle
-                          cx={slopeGraph.xPre}
-                          cy={line.preY}
-                          r={frameworkPhase === "pre" ? 3.4 : 2.5}
-                          fill={frameworkPhase === "pre" ? "#ffba52" : "#9fb3c0"}
-                        />
-                        <circle
-                          cx={slopeGraph.xPost}
-                          cy={line.postY}
-                          r={frameworkPhase === "post" ? 3.4 : 2.5}
-                          fill={frameworkPhase === "post" ? "#ffba52" : "#9fb3c0"}
-                        />
-                      </g>
-                    ))}
 
-                    <text x={slopeGraph.width / 2} y={slopeGraph.height - 10} textAnchor="middle" className="fill-muted text-[12px]">
-                      {sectionLabel(frameworkSection)} | {frameworkPairs.length} learner trajectories
-                    </text>
-                  </svg>
-                </div>
+                        <text x={slopeGraph.xPre} y={slopeGraph.yBottom + 24} textAnchor="middle" className="fill-ink text-[12px] font-semibold">
+                          Pre-test
+                        </text>
+                        <text x={slopeGraph.xPost} y={slopeGraph.yBottom + 24} textAnchor="middle" className="fill-ink text-[12px] font-semibold">
+                          Post-test
+                        </text>
 
-                <p className="mt-3 text-xs text-muted">
-                  Paired sample test reference: t(55) = 33.96, mean difference = 19.14, 95% CI = 18.01 to 20.27.
-                </p>
-              </article>
+                        {slopeGraph.lines.map((line, index) => (
+                          <g key={line.learner}>
+                            <motion.line
+                              x1={slopeGraph.xPre}
+                              y1={line.preY}
+                              x2={slopeGraph.xPost}
+                              y2={line.postY}
+                              stroke={line.stroke}
+                              strokeWidth="2"
+                              initial={{ pathLength: 0, opacity: 0.2 }}
+                              animate={{ pathLength: 1, opacity: 1 }}
+                              transition={{ duration: 0.52, delay: Math.min(index * 0.008, 0.42), ease: easeOut }}
+                            />
+                            <circle cx={slopeGraph.xPre} cy={line.preY} r={frameworkPhase === "pre" ? 3.3 : 2.3} fill={frameworkPhase === "pre" ? "#c8872f" : "#8ea2b6"} />
+                            <circle cx={slopeGraph.xPost} cy={line.postY} r={frameworkPhase === "post" ? 3.3 : 2.3} fill={frameworkPhase === "post" ? "#2f9e9a" : "#8ea2b6"} />
+                          </g>
+                        ))}
 
-              <article className="glass-panel rounded-2xl p-4">
-                <h3 className="text-base font-semibold">Distribution Histogram With Overlay</h3>
-                <p className="mt-2 text-sm text-muted">
-                  Section-level ALNAT classification counts with optional opposite-phase outlines.
-                </p>
+                        <text x={slopeGraph.width / 2} y={slopeGraph.height - 8} textAnchor="middle" className="fill-muted text-[11px]">
+                          {sectionLabel(frameworkSection)} | {frameworkPairs.length} paired records
+                        </text>
+                      </svg>
+                    </div>
+                  </motion.div>
+                ) : null}
 
-                <div className="mt-4 overflow-hidden rounded-xl border border-ink/15 bg-white/85">
-                  <svg viewBox={`0 0 ${histogram.width} ${histogram.height}`} className="h-auto w-full" aria-hidden="true">
-                    {Array.from({ length: 5 }, (_, idx) => {
-                      const value = Math.round((histogram.maxCount / 4) * idx);
-                      const y = histogram.margin.top + histogram.plotHeight - ((value / histogram.maxCount) * histogram.plotHeight);
-                      return (
-                        <g key={`hist-tick-${idx}`}>
-                          <line
-                            x1={histogram.margin.left}
-                            y1={y}
-                            x2={histogram.width - histogram.margin.right}
-                            y2={y}
-                            stroke="rgba(31,42,55,0.14)"
-                          />
-                          <text x={histogram.margin.left - 8} y={y + 4} textAnchor="end" className="fill-muted text-[12px]">
-                            {value}
-                          </text>
-                        </g>
-                      );
-                    })}
+                {frameworkChart === "histogram" ? (
+                  <motion.div
+                    key={`hist-${chartKey}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.36, ease: easeOut }}
+                  >
+                    <h3 className="text-base font-semibold text-ink">Distribution Histogram</h3>
+                    <p className="mt-1 text-sm text-muted">
+                      {frameworkMode === "compare"
+                        ? `Current ${frameworkPhase} bars with ${histogram.oppositePhase} dashed overlay.`
+                        : `Current ${frameworkPhase} distribution for ${sectionLabel(frameworkSection)}.`}
+                    </p>
 
-                    <line
-                      x1={histogram.margin.left}
-                      y1={histogram.margin.top + histogram.plotHeight}
-                      x2={histogram.width - histogram.margin.right}
-                      y2={histogram.margin.top + histogram.plotHeight}
-                      stroke="rgba(31,42,55,0.26)"
-                    />
+                    <div className="mt-3 rounded-2xl border border-ink/12 bg-white p-4">
+                      <div className="flex flex-wrap items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="h-2 w-5 rounded-full bg-aqua" />
+                          {frameworkPhase === "pre" ? "Pre-test" : "Post-test"}
+                        </span>
 
-                    {histogram.bars.map((bar) => (
-                      <g key={bar.key}>
-                        <rect
-                          x={bar.x}
-                          y={bar.yCurrent}
-                          width={histogram.barWidth}
-                          height={bar.hCurrent}
-                          fill={bar.color}
-                        />
-                        {histogram.compareOn ? (
-                          <rect
-                            x={bar.x + 1}
-                            y={bar.yOverlay}
-                            width={Math.max(histogram.barWidth - 2, 2)}
-                            height={bar.hOverlay}
-                            fill="none"
-                            stroke="rgba(255,186,82,0.95)"
-                            strokeWidth="1.5"
-                            strokeDasharray="4 3"
-                          />
+                        {frameworkMode === "compare" ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="h-2 w-5 rounded-full border border-amber/90 bg-amber/12" />
+                            {histogram.oppositePhase === "pre" ? "Pre-test Overlay" : "Post-test Overlay"}
+                          </span>
                         ) : null}
-                        <text
-                          x={bar.x + (histogram.barWidth / 2)}
-                          y={bar.yCurrent - 6}
-                          textAnchor="middle"
-                          className="fill-muted text-[12px]"
-                        >
-                          {bar.currentCount}
-                        </text>
-                      </g>
-                    ))}
 
-                    {ratingOrder.map((label, idx) => {
-                      const x = histogram.margin.left + (idx * histogram.groupWidth) + (histogram.groupWidth / 2);
-                      return (
-                        <text key={`x-${label}`} x={x} y={histogram.height - 28} textAnchor="middle" className="fill-muted text-[11px]">
-                          {label}
-                        </text>
-                      );
-                    })}
-                  </svg>
-                </div>
+                        <span className="ml-auto rounded-full border border-ink/12 bg-[#f8fbff] px-2 py-1 text-[10px] text-ink">
+                          Top Band: {histogram.topRow.label} ({histogram.topRow.currentCount})
+                        </span>
+                      </div>
 
-                <p className="mt-3 text-xs text-muted">{histogramNote}</p>
-              </article>
-            </div>
+                      <div className="mt-4 grid gap-3 lg:grid-cols-[40px_1fr]">
+                        <div className="relative hidden h-[270px] lg:block">
+                          {histogram.ticks.map((tick) => (
+                            <span
+                              key={`hist-y-${tick}`}
+                              className="mono-numeric absolute right-0 -translate-y-1/2 text-[10px] font-semibold text-muted"
+                              style={{ bottom: `${ratioWidth(tick, histogram.maxCount)}%` }}
+                            >
+                              {tick}
+                            </span>
+                          ))}
+                        </div>
 
-            <article className="mt-4 glass-panel rounded-2xl p-4">
-              <h3 className="text-base font-semibold">LRMDS and ISO Radar Comparison</h3>
-              <p className="mt-2 text-sm text-muted">
-                Teachers/Master Teacher scores use LRMDS totals; IT Expert uses ISO 9621-1 factor scores.
-              </p>
+                        <div className="relative h-[300px] rounded-2xl border border-ink/12 bg-[#f9fcff] px-2 pb-2 pt-3 sm:px-3">
+                          {histogram.ticks.map((tick) => (
+                            <div
+                              key={`hist-grid-${tick}`}
+                              className="pointer-events-none absolute left-2 right-2 border-t border-dashed border-ink/14"
+                              style={{ bottom: `calc(${ratioWidth(tick, histogram.maxCount)}% + 38px)` }}
+                            />
+                          ))}
 
-              <div className={`mt-4 grid gap-4 ${evaluatorProfiles.length > 1 ? "xl:grid-cols-2" : "xl:grid-cols-1"}`}>
-                {evaluatorProfiles.map((profile) => (
-                  <RadarPanel key={profile.key} profile={profile} />
-                ))}
-              </div>
+                          <div className="relative z-10 grid h-full grid-cols-5 items-end gap-2 sm:gap-3">
+                            {histogram.bins.map((bin, index) => (
+                              <div key={`hist-bin-${bin.label}`} className="flex h-full flex-col items-center justify-end">
+                                <div className="mono-numeric mb-1 text-[11px] font-semibold text-ink">
+                                  {bin.currentCount}
+                                </div>
+
+                                <div className="relative flex h-[210px] w-full items-end justify-center">
+                                  {frameworkMode === "compare" ? (
+                                    <div
+                                      className="absolute bottom-0 w-[74%] rounded-t-2xl border-2 border-dashed border-amber/85 bg-amber/12"
+                                      style={{ height: `${bin.oppositeHeight}%` }}
+                                    />
+                                  ) : null}
+
+                                  <motion.div
+                                    className="relative z-10 w-[66%] rounded-t-2xl"
+                                    style={{
+                                      backgroundColor: bin.palette.fill
+                                    }}
+                                    initial={{ height: 0, opacity: 0.8 }}
+                                    animate={{ height: `${bin.currentHeight}%`, opacity: 1 }}
+                                    transition={{ duration: 0.58, delay: index * 0.08, ease: easeOut }}
+                                  />
+                                </div>
+
+                                <div className="mt-2 min-h-[44px] text-center">
+                                  {bin.labelLines.map((line) => (
+                                    <p key={`${bin.label}-${line}`} className="text-[10px] font-semibold uppercase tracking-[0.04em] text-muted">
+                                      {line}
+                                    </p>
+                                  ))}
+                                  <p className="mono-numeric text-[10px] font-semibold text-ink/85">{bin.currentPercent.toFixed(1)}%</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {histogram.bins.map((bin) => (
+                          <div
+                            key={`hist-detail-${bin.label}`}
+                            className="rounded-lg border border-ink/10 bg-white/88 px-2.5 py-2 text-[11px] text-muted"
+                            style={{ backgroundColor: frameworkMode === "compare" ? undefined : bin.palette.chip }}
+                          >
+                            <span className="font-semibold text-ink">{bin.label}:</span> {bin.currentCount} learners ({bin.currentPercent.toFixed(1)}%)
+                            {frameworkMode === "compare"
+                              ? ` | ${histogram.oppositePhase}: ${bin.oppositeCount} (${bin.oppositePercent.toFixed(1)}%) | Delta ${signed(bin.delta, 0)}`
+                              : ""}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="mt-3 text-xs text-muted">{histogramInsight}</p>
+                  </motion.div>
+                ) : null}
+
+                {frameworkChart === "radar" ? (
+                  <motion.div
+                    key={`radar-${chartKey}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.36, ease: easeOut }}
+                  >
+                    <h3 className="text-base font-semibold text-ink">Radar Profile Charts</h3>
+                    <p className="mt-1 text-sm text-muted">
+                      LRMDS and ISO-based evaluator dimensions normalized to a 5-point profile for fast comparison.
+                    </p>
+
+                    <div className={`mt-4 grid gap-4 ${evaluatorProfiles.length > 1 ? "xl:grid-cols-2" : "xl:grid-cols-1"}`}>
+                      {evaluatorProfiles.map((profile) => (
+                        <RadarPanel key={profile.key} profile={profile} />
+                      ))}
+                    </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </article>
 
             <ChapterActions chapterId="chapter-framework" onJump={jumpToChapter} />
           </Reveal>
         </section>
 
-        <section id="chapter-baseline" className={`chapter-shell story-chapter ${chapterStateClass("chapter-baseline")}`}>
-          <Reveal>
-            <h2 className="section-title">Chapter 4 Baseline: ALNAT Pretest</h2>
-            <p className="section-copy">
-              Before PowerMathSaya, all 56 learners were classified under Needs Major Support,
-              establishing the intervention baseline.
+        <section id="chapter-comparison" className={`story-chapter panel-glass rounded-3xl p-5 sm:p-6 ${chapterClass("chapter-comparison")}`}>
+          <Reveal reducedMotion={reducedMotion}>
+            <h2 className="font-display text-3xl leading-tight">Chapter Comparison Layer</h2>
+            <p className="mt-2 text-sm text-muted">
+              Compare pre-test, Chapter 4 post-test detail, and Chapter 5 summary in one consistent view.
             </p>
 
-            <div className="mt-6 glass-panel rounded-2xl p-5">
-              <div className="grid gap-3 sm:grid-cols-[220px_1fr_auto] sm:items-center">
-                <p className="text-sm font-semibold">Needs Major Support</p>
-                <div className="h-3 overflow-hidden rounded-full bg-ink/10">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    whileInView={{ width: "100%" }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="h-full rounded-full bg-gradient-to-r from-[#5f7d96] to-[#89a4b8]"
-                  />
-                </div>
-                <p className="text-sm font-semibold">56 (100.00%)</p>
-              </div>
-            </div>
-
-            <ChapterActions chapterId="chapter-baseline" onJump={jumpToChapter} />
-          </Reveal>
-        </section>
-
-        <section id="chapter-intervention" className={`chapter-shell story-chapter ${chapterStateClass("chapter-intervention")}`}>
-          <Reveal>
-            <h2 className="section-title">Intervention Design: PowerMathSaya 01-04</h2>
-            <p className="section-copy">
-              Four game-based files target least mastered competencies through tutorials,
-              immediate feedback, rewards, and progressive challenge levels.
-            </p>
-
-            <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {[
-                ["PowerMathSaya01", "Foundation module for addition, subtraction, and multiplication with guided retry loops."],
-                ["PowerMathSaya02", "Multiplication adventure with mandatory tutorial reinforcement before advancement."],
-                ["PowerMathSaya03", "Treasure hunt progression using mixed operations and escalating word problems."],
-                ["PowerMathSaya04", "Game-show style team challenge for geometry, patterns, and algebra."]
-              ].map(([title, copy], index) => (
-                <motion.article
-                  key={title}
-                  initial={{ opacity: 0, y: 28 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ delay: index * 0.08, duration: 0.45 }}
-                  className="glass-panel rounded-2xl bg-gradient-to-b from-amber/10 to-white p-4"
-                >
-                  <h3 className="text-base font-semibold text-ink">{title}</h3>
-                  <p className="mt-2 text-sm text-muted">{copy}</p>
-                </motion.article>
-              ))}
-            </div>
-
-            <ChapterActions chapterId="chapter-intervention" onJump={jumpToChapter} />
-          </Reveal>
-        </section>
-
-        <section id="chapter-comparison" className={`chapter-shell story-chapter ${chapterStateClass("chapter-comparison")}`}>
-          <Reveal>
-            <h2 className="section-title">Comparison: Pretest Vs Posttest</h2>
-            <p className="section-copy">
-              The chart compares pretest values with Chapter 4 posttest details and Chapter 5 summary values
-              to show movement and reporting differences.
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap gap-2">
                 {[
                   ["pre-post4", "Pre vs Ch4"],
@@ -1084,7 +1110,7 @@ export default function App() {
                     key={value}
                     type="button"
                     onClick={() => setComparisonSource(value)}
-                    className={`pill-btn ${comparisonSource === value ? "pill-btn-active" : ""}`}
+                    className={`${pillClass} ${comparisonSource === value ? "border-aqua/60 bg-aqua/10 text-aqua" : ""}`}
                   >
                     {label}
                   </button>
@@ -1100,7 +1126,7 @@ export default function App() {
                     key={value}
                     type="button"
                     onClick={() => setComparisonMetric(value)}
-                    className={`pill-btn ${comparisonMetric === value ? "pill-btn-active" : ""}`}
+                    className={`${pillClass} ${comparisonMetric === value ? "border-aqua/60 bg-aqua/10 text-aqua" : ""}`}
                   >
                     {label}
                   </button>
@@ -1108,15 +1134,16 @@ export default function App() {
               </div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-ink/15 bg-sky/10 px-4 py-3 text-sm text-muted">
+            <div className="mt-4 rounded-xl border border-aqua/20 bg-aqua/5 px-4 py-3 text-sm text-muted">
               <strong className="text-ink">Insight:</strong> {comparisonInsight}
             </div>
 
-            <div className="mt-4 glass-panel rounded-2xl p-5">
+            <div className="mt-4 rounded-2xl border border-ink/12 bg-white/82 p-4">
               <div className="space-y-4">
                 {comparisonRows.map((row) => (
-                  <div key={row.label} className="grid gap-3 border-b border-ink/10 pb-4 last:border-b-0 last:pb-0 md:grid-cols-[190px_1fr]">
+                  <div key={`comparison-${row.label}`} className="grid gap-3 border-b border-ink/10 pb-4 last:border-b-0 last:pb-0 md:grid-cols-[200px_1fr]">
                     <p className="text-sm font-semibold text-ink">{row.label}</p>
+
                     <div className="space-y-2">
                       <div className="grid gap-3 sm:grid-cols-[120px_1fr_auto] sm:items-center">
                         <span className="text-[11px] uppercase tracking-[0.1em] text-muted">{comparisonSeries.nameA}</span>
@@ -1124,12 +1151,16 @@ export default function App() {
                           <motion.div
                             initial={{ width: 0 }}
                             whileInView={{ width: `${row.widthA}%` }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.7 }}
-                            className="h-full rounded-full bg-gradient-to-r from-[#6f89a0] to-[#9ab2c6]"
+                            viewport={{ once: true, amount: 0.6 }}
+                            transition={{ duration: 0.65, ease: easeOut }}
+                            className="h-full rounded-full bg-gradient-to-r from-[#6f879d] to-[#9cb2c6]"
                           />
                         </div>
-                        <span className="text-sm font-semibold text-ink">{row.valueA}</span>
+                        <span className="mono-numeric text-sm font-semibold text-ink">
+                          {comparisonMetric === "percent"
+                            ? `${row.rowA.percent.toFixed(2)}% (${row.rowA.count})`
+                            : `${row.rowA.count} (${row.rowA.percent.toFixed(2)}%)`}
+                        </span>
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-[120px_1fr_auto] sm:items-center">
@@ -1138,12 +1169,16 @@ export default function App() {
                           <motion.div
                             initial={{ width: 0 }}
                             whileInView={{ width: `${row.widthB}%` }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.7, delay: 0.06 }}
+                            viewport={{ once: true, amount: 0.6 }}
+                            transition={{ duration: 0.65, delay: 0.06, ease: easeOut }}
                             className="h-full rounded-full bg-gradient-to-r from-aqua to-coral"
                           />
                         </div>
-                        <span className="text-sm font-semibold text-ink">{row.valueB}</span>
+                        <span className="mono-numeric text-sm font-semibold text-ink">
+                          {comparisonMetric === "percent"
+                            ? `${row.rowB.percent.toFixed(2)}% (${row.rowB.count})`
+                            : `${row.rowB.count} (${row.rowB.percent.toFixed(2)}%)`}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1151,335 +1186,282 @@ export default function App() {
               </div>
             </div>
 
-            <div className="mt-4 grid gap-4 lg:grid-cols-3">
-              <article className="glass-panel rounded-2xl p-4">
-                <h3 className="text-sm font-semibold text-ink">Chapter 4 Detailed Posttest</h3>
-                <ul className="mt-3 space-y-2 text-sm text-muted">
-                  {researchData.posttestChapter4.map((row) => (
-                    <li key={row.label} className="flex items-center justify-between border-b border-ink/10 pb-2 last:border-b-0 last:pb-0">
-                      <span>{row.label}</span>
-                      <strong className="text-ink">{row.count} ({row.percent.toFixed(2)}%)</strong>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-
-              <article className="glass-panel rounded-2xl p-4">
-                <h3 className="text-sm font-semibold text-ink">Chapter 5 Summary Values</h3>
-                <ul className="mt-3 space-y-2 text-sm text-muted">
-                  {researchData.posttestChapter5Summary.map((row) => (
-                    <li key={row.label} className="flex items-center justify-between border-b border-ink/10 pb-2 last:border-b-0 last:pb-0">
-                      <span>{row.label}</span>
-                      <strong className="text-ink">{row.count} ({row.percent.toFixed(2)}%)</strong>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-
-              <article className="glass-panel rounded-2xl p-4">
-                <h3 className="text-sm font-semibold text-ink">Discrepancy Note</h3>
-                <p className="mt-3 text-sm text-muted">
-                  Chapter 4 reports 5 learners in Needs Major Support and 14 in Developing, while Chapter 5 summary
-                  reports 4 and 19 respectively.
-                </p>
-                <p className="mt-3 text-sm text-muted">
-                  This view intentionally keeps both values visible for transparent interpretation.
-                </p>
-              </article>
-            </div>
-
             <ChapterActions chapterId="chapter-comparison" onJump={jumpToChapter} />
           </Reveal>
         </section>
 
-        <section id="chapter-stats" className={`chapter-shell story-chapter ${chapterStateClass("chapter-stats")}`}>
-          <Reveal>
-            <h2 className="section-title">Statistical Evidence Of Improvement</h2>
-            <p className="section-copy">
-              Paired sample analysis indicates a strong, statistically significant increase in learner performance.
-            </p>
+        <section id="chapter-learners" className={`story-chapter panel-glass rounded-3xl p-5 sm:p-6 ${chapterClass("chapter-learners")}`}>
+          <Reveal reducedMotion={reducedMotion}>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="font-display text-3xl leading-tight">Per-Learner Data Tables</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Designed for instant understanding: before-and-after tables, clear movement cues, and focus snapshots per learner.
+                </p>
+              </div>
 
-            <div className="mt-7 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {[
-                ["Pretest Mean (SD)", `${researchData.tTest.preMean.toFixed(2)} (${researchData.tTest.preSd.toFixed(2)})`],
-                ["Posttest Mean (SD)", `${researchData.tTest.postMean.toFixed(2)} (${researchData.tTest.postSd.toFixed(2)})`],
-                ["Mean Difference", researchData.tTest.meanDifference.toFixed(2)],
-                ["Paired t-test", `t(55) = ${researchData.tTest.t.toFixed(2)}`],
-                ["p-value", researchData.tTest.p],
-                ["95% CI", researchData.tTest.ci]
-              ].map(([label, value]) => (
-                <article key={label} className="glass-panel rounded-2xl p-4">
-                  <p className="text-[11px] uppercase tracking-[0.1em] text-muted">{label}</p>
-                  <p className="mt-2 text-lg font-semibold text-ink">{value}</p>
-                </article>
-              ))}
+              <span className="rounded-full border border-aqua/20 bg-aqua/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-aqua">
+                Before (Pre-test) {"->"} After (Post-test)
+              </span>
             </div>
 
-            <ChapterActions chapterId="chapter-stats" onJump={jumpToChapter} />
-          </Reveal>
-        </section>
+            <div className="mt-5 grid gap-3 lg:grid-cols-5">
+              <label className="text-sm lg:col-span-2">
+                <span className="text-xs uppercase tracking-[0.1em] text-muted">Learner Search</span>
+                <input
+                  type="search"
+                  value={learnerSearch}
+                  onChange={(event) => setLearnerSearch(event.target.value)}
+                  placeholder="Type L18 or 18"
+                  className={fieldClass}
+                />
+              </label>
 
-        <section id="chapter-quality" className={`chapter-shell story-chapter ${chapterStateClass("chapter-quality")}`}>
-          <Reveal>
-            <h2 className="section-title">Evaluation Results And Quality Scores</h2>
-            <p className="section-copy">
-              Teachers, master teacher, and an IT expert rated the material across content,
-              instruction, technical quality, and software quality indicators.
-            </p>
+              <label className="text-sm">
+                <span className="text-xs uppercase tracking-[0.1em] text-muted">Section</span>
+                <select className={fieldClass} value={learnerSection} onChange={(event) => setLearnerSection(event.target.value)}>
+                  {sectionOptions.map((option) => (
+                    <option key={`learner-${option.value}`} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
 
-            <div className="mt-7 grid gap-4 xl:grid-cols-2">
-              <article className="glass-panel rounded-2xl p-4">
-                <h3 className="text-base font-semibold text-ink">LRMDS Evaluation Totals</h3>
-                <div className="mt-4 space-y-3">
-                  {researchData.qualityScores.map((row) => {
-                    const width = ratioWidth(row.score, row.max);
-                    return (
-                      <div key={row.label} className="grid gap-2 sm:grid-cols-[180px_1fr_auto] sm:items-center">
-                        <span className="text-sm text-muted">{row.label}</span>
-                        <div className="h-2.5 overflow-hidden rounded-full bg-ink/10">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            whileInView={{ width: `${width}%` }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.75, ease: "easeOut" }}
-                            className="h-full rounded-full bg-gradient-to-r from-aqua to-amber"
-                          />
-                        </div>
-                        <strong className="text-sm text-ink">{row.score}/{row.max}</strong>
-                      </div>
-                    );
-                  })}
-                </div>
-              </article>
+              <label className="text-sm">
+                <span className="text-xs uppercase tracking-[0.1em] text-muted">Pre-test Rating</span>
+                <select className={fieldClass} value={preRatingFilter} onChange={(event) => setPreRatingFilter(event.target.value)}>
+                  <option value="all">All</option>
+                  {ratingOrder.map((label) => (
+                    <option key={`pre-filter-${label}`} value={label}>{label}</option>
+                  ))}
+                </select>
+              </label>
 
-              <article className="glass-panel rounded-2xl p-4">
-                <h3 className="text-base font-semibold text-ink">IT Expert Scores</h3>
-                <div className="mt-4 space-y-3">
-                  {researchData.itExpertScores.map((row) => {
-                    const width = ratioWidth(row.score, row.max);
-                    return (
-                      <div key={row.label} className="grid gap-2 sm:grid-cols-[180px_1fr_auto] sm:items-center">
-                        <span className="text-sm text-muted">{row.label}</span>
-                        <div className="h-2.5 overflow-hidden rounded-full bg-ink/10">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            whileInView={{ width: `${width}%` }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.75, ease: "easeOut" }}
-                            className="h-full rounded-full bg-gradient-to-r from-sky to-coral"
-                          />
-                        </div>
-                        <strong className="text-sm text-ink">{row.score}/{row.max}</strong>
-                      </div>
-                    );
-                  })}
-                </div>
-              </article>
+              <label className="text-sm">
+                <span className="text-xs uppercase tracking-[0.1em] text-muted">Post-test Rating</span>
+                <select className={fieldClass} value={postRatingFilter} onChange={(event) => setPostRatingFilter(event.target.value)}>
+                  <option value="all">All</option>
+                  {ratingOrder.map((label) => (
+                    <option key={`post-filter-${label}`} value={label}>{label}</option>
+                  ))}
+                </select>
+              </label>
             </div>
 
-            <ChapterActions chapterId="chapter-quality" onJump={jumpToChapter} />
-          </Reveal>
-        </section>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLearnerSearch("");
+                  setLearnerSection("all");
+                  setPreRatingFilter("all");
+                  setPostRatingFilter("all");
+                  setFocusedLearner("");
+                }}
+                className="rounded-full border border-ink/20 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted transition hover:border-aqua/35 hover:text-ink"
+              >
+                Reset Learner Filters
+              </button>
 
-        <section id="chapter-recommendations" className={`chapter-shell story-chapter ${chapterStateClass("chapter-recommendations")}`}>
-          <Reveal>
-            <h2 className="section-title">Evaluator Recommendations</h2>
-            <p className="section-copy">
-              Ten recommendations were listed, led by adding real-life scenarios and reflective discussion prompts.
-            </p>
-
-            <div className="mt-7 grid gap-3 lg:grid-cols-2">
-              {researchData.recommendations.map((item, index) => (
-                <motion.article
-                  key={`${item.text}-${index}`}
-                  initial={{ opacity: 0, y: 22 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ delay: index * 0.03, duration: 0.4 }}
-                  className="glass-panel rounded-2xl bg-gradient-to-br from-coral/10 to-white p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm text-ink">{item.text}</p>
-                    <span className="rounded-full bg-white/15 px-2 py-1 text-xs font-semibold text-ink">x{item.frequency}</span>
-                  </div>
-                </motion.article>
-              ))}
-            </div>
-
-            <ChapterActions chapterId="chapter-recommendations" onJump={jumpToChapter} />
-          </Reveal>
-        </section>
-
-        <section id="chapter-learner-data" className={`chapter-shell story-chapter story-chapter-long ${chapterStateClass("chapter-learner-data")}`}>
-          <Reveal>
-            <h2 className="section-title">Per-Learner Data Tables</h2>
-            <p className="section-copy">
-              Expand each table to inspect all 56 learner records from Chapter 4 pretest and posttest results.
-            </p>
-
-            <div className="mt-7 glass-panel rounded-2xl p-4">
-              <div className="grid gap-3 lg:grid-cols-3">
-                <label className="text-sm">
-                  <span className="text-xs uppercase tracking-[0.1em] text-muted">Learner Search</span>
-                  <input
-                    type="search"
-                    value={learnerSearch}
-                    onChange={(event) => setLearnerSearch(event.target.value)}
-                    placeholder="Type L18 or 18"
-                    className={fieldClass}
-                  />
-                </label>
-
-                <label className="text-sm">
-                  <span className="text-xs uppercase tracking-[0.1em] text-muted">Posttest Rating</span>
-                  <select
-                    value={learnerRating}
-                    onChange={(event) => setLearnerRating(event.target.value)}
-                    className={fieldClass}
-                  >
-                    <option value="all">All Ratings</option>
-                    <option value="Needs Major Support">Needs Major Support</option>
-                    <option value="Emerging">Emerging</option>
-                    <option value="Anchoring">Anchoring</option>
-                    <option value="Developing">Developing</option>
-                    <option value="Transforming">Transforming</option>
-                  </select>
-                </label>
-
+              {focusedLearner ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    setLearnerSearch("");
-                    setLearnerRating("all");
-                  }}
-                  className="self-end rounded-xl border border-ink/20 bg-white/80 px-4 py-2 text-sm font-medium text-ink transition hover:bg-white"
+                  onClick={() => setFocusedLearner("")}
+                  className="rounded-full border border-aqua/40 bg-aqua/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-aqua transition hover:bg-aqua/20"
                 >
-                  Reset Filters
+                  Clear Focus ({focusedLearner})
                 </button>
-              </div>
+              ) : null}
 
-              <p className="mt-4 text-sm text-muted">
-                Showing {filteredLearners.length} of {learnerPairs.length} learners.
-              </p>
+              <button
+                type="button"
+                onClick={() => setTableView("pre")}
+                className={`${pillClass} ${tableView === "pre" ? "border-aqua/60 bg-aqua/10 text-aqua" : ""}`}
+              >
+                Show Pre-test Table
+              </button>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {[
-                  ["Matched Learners", `${filteredLearners.length}`],
-                  ["Avg Pretest %", `${learnerInsights.avgPre.toFixed(2)}%`],
-                  ["Avg Posttest %", `${learnerInsights.avgPost.toFixed(2)}%`],
-                  ["Mean Score Gain", `${learnerInsights.meanGain >= 0 ? "+" : ""}${learnerInsights.meanGain.toFixed(2)}`]
-                ].map(([label, value]) => (
-                  <article key={label} className="rounded-xl border border-ink/15 bg-white/75 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.1em] text-muted">{label}</p>
-                    <p className="mt-2 text-lg font-semibold text-ink">{value}</p>
-                  </article>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => setTableView("post")}
+                className={`${pillClass} ${tableView === "post" ? "border-aqua/60 bg-aqua/10 text-aqua" : ""}`}
+              >
+                Show Post-test Table
+              </button>
             </div>
 
-            <div className="mt-4 grid gap-4">
-              <details open className="glass-panel rounded-2xl">
-                <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">
-                  Table 1: ALNAT Pretest (Before PowerMathSaya)
-                </summary>
-                <div className="table-scroll overflow-x-auto border-t border-ink/10">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard title="Matched Learners" value={`${learnerBase.length}`} subcopy={sectionLabel(learnerSection)} />
+              <StatCard title="Avg Pretest" value={`${learnerInsights.avgPre.toFixed(2)}%`} subcopy="Current filtered base" />
+              <StatCard title="Avg Posttest" value={`${learnerInsights.avgPost.toFixed(2)}%`} subcopy="Current filtered base" />
+              <StatCard title="Mean Score Gain" value={signed(learnerInsights.meanGain, 2)} subcopy="Post - Pre" />
+            </div>
+
+            <div className="mt-4">
+              <article className={`learner-table-card pre-table-card rounded-2xl border border-ink/12 bg-white/84 p-4 ${tableView === "pre" ? "" : "hidden"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-base font-semibold text-ink">Pre-test Table (Separated)</h3>
+                  <span className="mono-numeric rounded-full border border-ink/12 bg-white px-2 py-1 text-xs text-muted">{preRows.length} rows</span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {learnerDistribution.pre.map((row) => (
+                    row.count ? (
+                      <span key={`pre-count-${row.label}`} className="table-mini-pill">
+                        {row.label}: {row.count}
+                      </span>
+                    ) : null
+                  ))}
+                </div>
+
+                <div className="table-scroll mt-3 max-h-[430px] overflow-auto rounded-xl border border-ink/12">
                   <table className="min-w-[680px] w-full text-left text-sm">
-                    <thead className="bg-[#e3ebf4] text-ink">
+                    <thead className="sticky top-0 z-10 bg-[#dbe8f5] text-ink">
                       <tr>
+                        <th className="px-3 py-2">#</th>
                         <th className="px-3 py-2">Learner</th>
+                        <th className="px-3 py-2">Section</th>
                         <th className="px-3 py-2">Score</th>
                         <th className="px-3 py-2">Percent</th>
                         <th className="px-3 py-2">Rating</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredLearners.length ? (
-                        filteredLearners.map((pair, index) => (
-                          <tr key={`pre-${pair.learner}`} className={index % 2 === 0 ? "bg-white/[0.02]" : ""}>
-                            <td className="px-3 py-2 text-muted">{pair.pre.learner}</td>
-                            <td className="px-3 py-2 text-muted">{pair.pre.score}</td>
-                            <td className="px-3 py-2 text-muted">{pair.pre.percent.toFixed(2)}%</td>
-                            <td className="px-3 py-2 text-muted">{pair.pre.rating}</td>
-                          </tr>
-                        ))
+                      {preRows.length ? (
+                        preRows.map((pair, index) => {
+                          const focused = focusedLearner === pair.learner;
+
+                          return (
+                            <tr
+                              key={`pre-row-${pair.learner}`}
+                              onClick={() => setFocusedLearner(pair.learner)}
+                              className={`${focused ? "learner-row-focus" : index % 2 === 0 ? "bg-white" : "bg-[#f8fbff]"} cursor-pointer transition-colors hover:bg-[#eef6ff]`}
+                            >
+                              <td className="mono-numeric px-3 py-2 text-muted">{index + 1}</td>
+                              <td className="mono-numeric px-3 py-2 font-semibold text-ink">{pair.pre.learner}</td>
+                              <td className="px-3 py-2 text-muted">{pair.section}</td>
+                              <td className="mono-numeric px-3 py-2 text-muted">{pair.pre.score}</td>
+                              <td className="mono-numeric px-3 py-2 text-muted">{pair.pre.percent.toFixed(2)}%</td>
+                              <td className="px-3 py-2"><RatingPill label={pair.pre.rating} /></td>
+                            </tr>
+                          );
+                        })
                       ) : (
                         <tr>
-                          <td colSpan={4} className="px-3 py-5 text-center text-muted">
-                            No learners match the current filter.
-                          </td>
+                          <td colSpan={6} className="px-3 py-5 text-center text-muted">No pre-test rows match the active filters.</td>
                         </tr>
                       )}
                     </tbody>
                   </table>
                 </div>
-              </details>
+              </article>
 
-              <details className="glass-panel rounded-2xl">
-                <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">
-                  Table 2: Posttest (After PowerMathSaya)
-                </summary>
-                <div className="table-scroll overflow-x-auto border-t border-ink/10">
-                  <table className="min-w-[680px] w-full text-left text-sm">
-                    <thead className="bg-[#e3ebf4] text-ink">
+              <article className={`learner-table-card post-table-card rounded-2xl border border-ink/12 bg-white/84 p-4 ${tableView === "post" ? "" : "hidden"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-base font-semibold text-ink">Post-test Table (Separated)</h3>
+                  <span className="mono-numeric rounded-full border border-ink/12 bg-white px-2 py-1 text-xs text-muted">{postRows.length} rows</span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {learnerDistribution.post.map((row) => (
+                    row.count ? (
+                      <span key={`post-count-${row.label}`} className="table-mini-pill">
+                        {row.label}: {row.count}
+                      </span>
+                    ) : null
+                  ))}
+                </div>
+
+                <div className="table-scroll mt-3 max-h-[430px] overflow-auto rounded-xl border border-ink/12">
+                  <table className="min-w-[860px] w-full text-left text-sm">
+                    <thead className="sticky top-0 z-10 bg-[#dbe8f5] text-ink">
                       <tr>
+                        <th className="px-3 py-2">#</th>
                         <th className="px-3 py-2">Learner</th>
+                        <th className="px-3 py-2">Section</th>
                         <th className="px-3 py-2">Score</th>
                         <th className="px-3 py-2">Percent</th>
                         <th className="px-3 py-2">Rating</th>
+                        <th className="px-3 py-2">Gain</th>
+                        <th className="px-3 py-2">Movement</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredLearners.length ? (
-                        filteredLearners.map((pair, index) => (
-                          <tr key={`post-${pair.learner}`} className={index % 2 === 0 ? "bg-white/[0.02]" : ""}>
-                            <td className="px-3 py-2 text-muted">{pair.post.learner}</td>
-                            <td className="px-3 py-2 text-muted">{pair.post.score}</td>
-                            <td className="px-3 py-2 text-muted">{pair.post.percent.toFixed(2)}%</td>
-                            <td className="px-3 py-2 text-muted">{pair.post.rating}</td>
-                          </tr>
-                        ))
+                      {postRows.length ? (
+                        postRows.map((pair, index) => {
+                          const focused = focusedLearner === pair.learner;
+                          const gain = pair.post.score - pair.pre.score;
+
+                          return (
+                            <tr
+                              key={`post-row-${pair.learner}`}
+                              onClick={() => setFocusedLearner(pair.learner)}
+                              className={`${focused ? "learner-row-focus" : index % 2 === 0 ? "bg-white" : "bg-[#f8fbff]"} cursor-pointer transition-colors hover:bg-[#eef6ff]`}
+                            >
+                              <td className="mono-numeric px-3 py-2 text-muted">{index + 1}</td>
+                              <td className="mono-numeric px-3 py-2 font-semibold text-ink">{pair.post.learner}</td>
+                              <td className="px-3 py-2 text-muted">{pair.section}</td>
+                              <td className="mono-numeric px-3 py-2 text-muted">{pair.post.score}</td>
+                              <td className="mono-numeric px-3 py-2 text-muted">{pair.post.percent.toFixed(2)}%</td>
+                              <td className="px-3 py-2"><RatingPill label={pair.post.rating} /></td>
+                              <td className="px-3 py-2">
+                                <div className="space-y-1">
+                                  <span className={`mono-numeric text-sm font-semibold ${gain >= 0 ? "text-aqua" : "text-coral"}`}>
+                                    {signed(gain, 0)}
+                                  </span>
+                                  <div className="gain-track">
+                                    <div
+                                      className={`h-full rounded-full ${gain >= 0 ? "bg-gradient-to-r from-aqua to-sky" : "bg-gradient-to-r from-coral to-amber"}`}
+                                      style={{ width: `${ratioWidth(Math.abs(gain), maxGainAbs)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 text-xs text-muted">
+                                  <span className="rounded-full border border-ink/10 bg-white px-2 py-1">
+                                    {pair.pre.rating} {"->"} {pair.post.rating}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
                       ) : (
                         <tr>
-                          <td colSpan={4} className="px-3 py-5 text-center text-muted">
-                            No learners match the current filter.
-                          </td>
+                          <td colSpan={8} className="px-3 py-5 text-center text-muted">No post-test rows match the active filters.</td>
                         </tr>
                       )}
                     </tbody>
                   </table>
                 </div>
-              </details>
+              </article>
             </div>
 
-            <ChapterActions chapterId="chapter-learner-data" onJump={jumpToChapter} />
+            <ChapterActions chapterId="chapter-learners" onJump={jumpToChapter} />
           </Reveal>
         </section>
 
-        <section id="chapter-conclusion" className={`chapter-shell story-chapter ${chapterStateClass("chapter-conclusion")}`}>
-          <Reveal>
-            <div className="glass-panel rounded-2xl p-8 text-center">
-              <h2 className="section-title">Conclusion</h2>
-              <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-muted sm:text-base">
-                Across the three chapters, the evidence points to substantial numeracy gains after
-                PowerMathSaya, supported by strong statistical results and high evaluator ratings.
-              </p>
+        <section id="chapter-conclusion" className={`story-chapter panel-glass rounded-3xl p-8 text-center ${chapterClass("chapter-conclusion")}`}>
+          <Reveal reducedMotion={reducedMotion}>
+            <h2 className="font-display text-4xl leading-tight">Conclusion</h2>
+            <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-muted sm:text-base">
+              The complete visualization now follows a chapter-driven research narrative with transition-rich charts,
+              comparison controls, and fully separated pre-test/post-test tables to avoid confusion during defense and reporting.
+            </p>
 
-              <div className="mt-7 flex flex-wrap justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => jumpToChapter("chapter-hero")}
-                  className="rounded-full border border-aqua/50 bg-aqua/15 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/30"
-                >
-                  Replay Research Story
-                </button>
-                <button
-                  type="button"
-                  onClick={() => jumpToChapter("chapter-framework")}
-                  className="rounded-full border border-ink/20 bg-white/80 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-ink transition hover:-translate-y-0.5 hover:bg-white"
-                >
-                  Jump To Analytics Framework
-                </button>
-              </div>
+            <div className="mt-7 flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => jumpToChapter("chapter-hero")}
+                className="rounded-full border border-aqua/45 bg-aqua/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-aqua transition hover:-translate-y-0.5 hover:bg-aqua/20"
+              >
+                Replay Story
+              </button>
+              <button
+                type="button"
+                onClick={() => jumpToChapter("chapter-framework")}
+                className="rounded-full border border-ink/20 bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink transition hover:-translate-y-0.5 hover:bg-white/90"
+              >
+                Back To Framework
+              </button>
             </div>
           </Reveal>
         </section>
